@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_overtime_wizard_form" model="ir.ui.view">
+        <field name="name">gs.planning.overtime.wizard.form</field>
+        <field name="model">gs.planning.overtime.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Ajouter des heures supp">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Les heures ajoutées prolongent la fin du shift sans dépasser
+                        la limite « Heures supp. autorisées / jour » configurée sur le projet.
+                    </div>
+                    <group>
+                        <group string="Shift">
+                            <field name="slot_id" invisible="1"/>
+                            <field name="project_id"/>
+                            <field name="employee_id"/>
+                            <field name="start_datetime"/>
+                            <field name="end_datetime"/>
+                            <field name="current_hours" widget="float_time"/>
+                        </group>
+                        <group string="Quota OT du jour">
+                            <field name="overtime_limit" widget="float_time"/>
+                            <field name="overtime_used" widget="float_time"/>
+                            <field name="available_hours" widget="float_time"
+                                   class="fw-bold text-success"/>
+                            <field name="daily_total_hours" widget="float_time" optional="hide"/>
+                        </group>
+                    </group>
+                    <separator string="Heures à ajouter"/>
+                    <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+                        <button name="action_decrement_hour" type="object"
+                                class="btn btn-secondary btn-lg"
+                                title="Retirer 1 heure">
+                            <i class="fa fa-minus"/>
+                        </button>
+                        <field name="hours_to_add" widget="float_time"
+                               readonly="1" nolabel="1"
+                               class="fw-bold fs-3 text-center mx-3"
+                               style="min-width: 80px;"/>
+                        <button name="action_increment_hour" type="object"
+                                class="btn btn-primary btn-lg"
+                                title="Ajouter 1 heure">
+                            <i class="fa fa-plus"/>
+                        </button>
+                    </div>
+                </sheet>
+                <footer>
+                    <button string="Confirmer" type="object" name="action_confirm"
+                            class="btn-success"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

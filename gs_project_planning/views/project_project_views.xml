@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Bouton 'Configuration' sur les cartes kanban projet
+         + entrée dans le menu ⋮ en backup -->
+    <record id="view_project_kanban_inherit_gs_planning" model="ir.ui.view">
+        <field name="name">project.project.kanban.inherit.gs.planning</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban"/>
+        <field name="arch" type="xml">
+            <!-- Item dans le menu ⋮ (masqué pour le Chef d'équipe) -->
+            <xpath expr="//t[@t-name='menu']" position="inside">
+                <a name="action_open_project_config" type="object"
+                   role="menuitem" class="dropdown-item"
+                   groups="project.group_project_manager,gs_project_planning.group_egida_admin_system">
+                    <i class="fa fa-cog me-2 text-primary"/>Configuration
+                </a>
+            </xpath>
+            <!-- Bouton Configuration (masqué pour le Chef d'équipe) -->
+            <xpath expr="//t[@t-name='card']" position="inside">
+                <div class="gs-project-config mt-2 pt-2 border-top text-end"
+                     groups="project.group_project_manager,gs_project_planning.group_egida_admin_system">
+                    <button name="action_open_project_config" type="object"
+                            class="btn btn-sm btn-info text-white fw-bold"
+                            title="Configuration du projet">
+                        <i class="fa fa-cog me-1"/>Configuration
+                    </button>
+                </div>
+                <!-- Chef de projet : accès direct au planning du projet -->
+                <div class="gs-project-validate mt-2 pt-2 border-top text-end"
+                     groups="gs_project_planning.group_egida_chef_projet">
+                    <button name="action_open_planning_slots" type="object"
+                            class="btn btn-sm btn-success fw-bold"
+                            title="Valider le planning du projet">
+                        <i class="fa fa-check me-1"/>Valider le planning
+                    </button>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_project_form_inherit_gs_planning" model="ir.ui.view">
+        <field name="name">project.project.form.inherit.gs.planning</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+
+            <!-- Page Settings réservée à l'administration système EGIDA -->
+            <xpath expr="//page[@name='settings']" position="attributes">
+                <attribute name="groups">gs_project_planning.group_egida_admin_system</attribute>
+            </xpath>
+
+            <!-- Bouton header -->
+            <xpath expr="//header" position="inside">
+                <button name="action_generate_planning_slots"
+                        type="object"
+                        string="Générer le planning"
+                        class="oe_highlight"
+                        invisible="planning_generated or not date_start or not date"
+                        groups="project.group_project_manager"/>
+                <button name="action_reset_planning"
+                        type="object"
+                        string="Réinitialiser le planning"
+                        invisible="not planning_generated"
+                        confirm="Cela supprimera tous les créneaux en brouillon de ce projet. Continuer ?"
+                        groups="project.group_project_manager"/>
+                <button name="action_refresh_planning"
+                        type="object"
+                        string="Actualiser le planning"
+                        invisible="not planning_generated"
+                        confirm="Le planning sera recalculé à partir de demain 00h00. Les shifts passés et validés ne seront pas modifiés. Continuer ?"
+                        groups="project.group_project_manager"/>
+                <button name="action_sync_shift_config"
+                        type="object"
+                        string="Synchroniser config shifts"
+                        invisible="not planning_line_ids"
+                        confirm="Recopier les pauses et rôles par défaut depuis la configuration actuelle des shifts vers les lignes d'affectation ?"
+                        groups="project.group_project_manager"/>
+                <button name="action_publish_planning"
+                        type="object"
+                        string="Publier le planning"
+                        class="oe_highlight"
+                        invisible="draft_slot_count == 0"
+                        groups="project.group_project_manager"/>
+                <button name="action_unpublish_planning"
+                        type="object"
+                        string="Dépublier"
+                        invisible="not planning_generated or draft_slot_count == planning_slot_count"
+                        confirm="Repasser tous les créneaux publiés non-validés en brouillon ?"
+                        groups="project.group_project_manager"/>
+                <button name="action_validate_all_past_slots"
+                        type="object"
+                        string="Valider les shifts passés pour la paie"
+                        class="oe_highlight"
+                        invisible="pending_slot_count == 0"
+                        confirm="Créer les feuilles de temps pour tous les shifts passés non validés ?"
+                        groups="project.group_project_manager"/>
+            </xpath>
+
+            <!-- Stat buttons -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_planning_slots"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-calendar"
+                        invisible="planning_slot_count == 0">
+                    <field name="planning_slot_count" widget="statinfo" string="Créneaux"/>
+                </button>
+                <button name="action_open_pending_slots"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-clock-o"
+                        invisible="pending_slot_count == 0">
+                    <field name="pending_slot_count" widget="statinfo" string="À valider"/>
+                </button>
+                <button name="action_open_project_timesheets"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-check-square-o"
+                        invisible="validated_slot_count == 0">
+                    <field name="validated_slot_count" widget="statinfo" string="Validés"/>
+                </button>
+            </xpath>
+
+            <!-- Onglet Équipe du projet -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Équipe du projet" name="project_team">
+                    <group>
+                        <group string="Plafond horaire / jour">
+                            <field name="daily_hour_limit_auto"/>
+                            <field name="daily_hour_limit" widget="float_time"
+                                   readonly="daily_hour_limit_auto"/>
+                            <field name="overtime_hour_limit" widget="float_time"/>
+                        </group>
+                        <group string="Consommation">
+                            <field name="overtime_hours_used" widget="float_time" readonly="1"/>
+                        </group>
+                    </group>
+                    <separator string="Employés autorisés à intervenir sur ce projet"/>
+                    <field name="allowed_employee_ids" widget="many2many_tags"
+                           options="{'no_create': True}"/>
+                    <div class="text-muted mt-2">
+                        Seuls les employés listés ci-dessus pourront être sélectionnés
+                        dans les affectations et les créneaux de planning de ce projet.
+                    </div>
+                </page>
+            </xpath>
+
+            <!-- Onglet Planning Resources -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Planning Resources" name="planning_resources">
+                    <field name="planning_generated" invisible="1"/>
+                    <field name="planning_line_ids">
+                        <list editable="bottom">
+                            <field name="employee_id"
+                                   domain="[('id', 'in', parent.allowed_employee_ids)]"/>
+                            <field name="role_id"/>
+                            <field name="shift_id"/>
+                            <field name="start_hour" widget="float_time" optional="hide"/>
+                            <field name="end_hour" widget="float_time" optional="hide"/>
+                            <field name="break_start_hour" widget="float_time"
+                                   optional="show" string="Pause début"/>
+                            <field name="break_end_hour" widget="float_time"
+                                   optional="show" string="Pause fin"/>
+                            <field name="break_duration" widget="float_time"
+                                   optional="hide" string="Pause (h)"/>
+                        </list>
+                    </field>
+                    <div class="text-muted mt-2">
+                        Le planning est généré automatiquement lorsque le projet passe au stage
+                        <b>Gagné</b>. Vous pouvez aussi cliquer sur <b>Générer le planning</b>
+                        dans l'en-tête.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

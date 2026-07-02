@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- =================================================================
+         CATALOGUE INITIAL DES SHIFTS (remplace l'ancien SHIFT_CATALOG Python)
+         Modifiable depuis Projet → Configuration → Shifts
+         ================================================================= -->
+
+    <!-- Shifts Sécurité 8h (3×8 = couverture 24/7 classique) -->
+    <record id="shift_security_morning" model="gs.planning.shift">
+        <field name="name">Sécurité Matin</field>
+        <field name="code">security_morning</field>
+        <field name="start_hour">6.0</field>
+        <field name="end_hour">14.0</field>
+        <field name="role_id" ref="planning_role_security"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="shift_security_afternoon" model="gs.planning.shift">
+        <field name="name">Sécurité Après-midi</field>
+        <field name="code">security_afternoon</field>
+        <field name="start_hour">14.0</field>
+        <field name="end_hour">22.0</field>
+        <field name="role_id" ref="planning_role_security"/>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="shift_security_night" model="gs.planning.shift">
+        <field name="name">Sécurité Nuit</field>
+        <field name="code">security_night</field>
+        <field name="start_hour">22.0</field>
+        <field name="end_hour">6.0</field>
+        <field name="role_id" ref="planning_role_security"/>
+        <field name="sequence">30</field>
+    </record>
+
+    <!-- Shifts Sécurité 12h (2×12) -->
+    <record id="shift_security_12h_day" model="gs.planning.shift">
+        <field name="name">Sécurité Jour 12h</field>
+        <field name="code">security_12h_day</field>
+        <field name="start_hour">6.0</field>
+        <field name="end_hour">18.0</field>
+        <field name="break_start_hour">13.0</field>
+        <field name="break_end_hour">15.0</field>
+        <field name="role_id" ref="planning_role_security"/>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="shift_security_12h_night" model="gs.planning.shift">
+        <field name="name">Sécurité Nuit 12h</field>
+        <field name="code">security_12h_night</field>
+        <field name="start_hour">18.0</field>
+        <field name="end_hour">6.0</field>
+        <field name="break_start_hour">0.0</field>
+        <field name="break_end_hour">2.0</field>
+        <field name="role_id" ref="planning_role_security"/>
+        <field name="sequence">50</field>
+    </record>
+
+    <!-- Autres rôles -->
+    <record id="shift_cleaning_morning" model="gs.planning.shift">
+        <field name="name">Ménage Matin</field>
+        <field name="code">cleaning_morning</field>
+        <field name="start_hour">6.0</field>
+        <field name="end_hour">10.0</field>
+        <field name="role_id" ref="planning_role_cleaning"/>
+        <field name="sequence">60</field>
+    </record>
+
+    <record id="shift_manager_day" model="gs.planning.shift">
+        <field name="name">Manager Jour</field>
+        <field name="code">manager_day</field>
+        <field name="start_hour">8.0</field>
+        <field name="end_hour">16.0</field>
+        <field name="role_id" ref="planning_role_manager"/>
+        <field name="sequence">70</field>
+    </record>
+
+</odoo>

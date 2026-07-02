@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- =========================================================
+         Vue liste pour la validation
+         ========================================================= -->
+    <record id="view_planning_slot_list_gs" model="ir.ui.view">
+        <field name="name">planning.slot.list.gs</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list create="0" string="Créneaux à valider"
+                  decoration-success="is_validated"
+                  decoration-muted="is_absent"
+                  decoration-warning="is_past and not is_validated and not is_absent and not is_overdue"
+                  decoration-danger="is_overdue"
+                  multi_edit="0">
+                <field name="start_datetime"/>
+                <field name="end_datetime"/>
+                <field name="duration_hours" widget="float_time" sum="Total heures"/>
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="role_id" optional="show"/>
+                <field name="is_validated" widget="boolean_toggle" readonly="1"/>
+                <field name="is_absent" widget="boolean_toggle" readonly="1"/>
+                <field name="timesheet_id" optional="hide" readonly="1"/>
+                <field name="replaces_slot_id" optional="hide" readonly="1"/>
+                <field name="replacement_reason" optional="hide" readonly="1"/>
+                <field name="is_past" column_invisible="True"/>
+                <field name="is_overdue" column_invisible="True"/>
+                <field name="replaced_by_slot_ids" column_invisible="True"/>
+                <button name="action_validate_for_payroll" type="object"
+                        icon="fa-check text-success" title="Valider pour la paie"
+                        invisible="is_validated or is_absent"/>
+                <button name="action_mark_absent" type="object"
+                        icon="fa-ban text-danger" title="Marquer absent"
+                        invisible="is_validated or is_absent"/>
+                <button name="action_open_replace_wizard" type="object"
+                        icon="fa-refresh text-primary" title="Remplacer (agent absent)"
+                        invisible="not is_absent or replaced_by_slot_ids"/>
+                <button name="action_cancel_validation" type="object"
+                        icon="fa-undo text-warning" title="Annuler la validation"
+                        invisible="not is_validated and not is_absent"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- =========================================================
+         Vue kanban dashboard "Pro" pour les chefs de projet
+         ========================================================= -->
+    <record id="view_planning_slot_kanban_gs" model="ir.ui.view">
+        <field name="name">planning.slot.kanban.gs</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <kanban create="0" default_group_by="start_datetime:day"
+                    js_class="planning_slot_kanban_gs"
+                    class="o_kanban_dashboard o_planning_slot_kanban_gs"
+                    sample="1"
+                    records_draggable="0"
+                    group_create="0"
+                    group_delete="0"
+                    group_edit="0">
+                <field name="employee_id"/>
+                <field name="employee_cin"/>
+                <field name="employee_short_name"/>
+                <field name="role_id"/>
+                <field name="project_id"/>
+                <field name="start_datetime"/>
+                <field name="end_datetime"/>
+                <field name="duration_hours"/>
+                <field name="display_date_range"/>
+                <field name="display_date_short"/>
+                <field name="display_time_range"/>
+                <field name="gs_status"/>
+                <field name="is_validated"/>
+                <field name="is_absent"/>
+                <field name="is_overdue"/>
+                <field name="is_past"/>
+                <field name="replaced_by_slot_ids"/>
+                <field name="replaces_slot_id"/>
+                <field name="replacement_reason"/>
+                <field name="is_daily_paid"/>
+                <field name="is_night_shift"/>
+                <field name="break_duration"/>
+                <field name="break_label"/>
+                <field name="break_range_label"/>
+
+                <progressbar field="gs_status"
+                             colors='{"overdue": "danger", "pending": "warning", "validated": "success", "absent": "muted", "upcoming": "info"}'
+                             sum_field="duration_hours"/>
+
+                <templates>
+                    <t t-name="kanban-menu">
+                        <a name="action_validate_day_for_payroll" type="object"
+                           role="menuitem" class="dropdown-item">
+                            <i class="fa fa-calendar-check-o me-2 text-success"/>Valider toute la journée
+                        </a>
+                        <a name="action_validate_for_payroll" type="object"
+                           role="menuitem" class="dropdown-item"
+                           t-if="!record.is_validated.raw_value and !record.is_absent.raw_value">
+                            <i class="fa fa-check me-2 text-success"/>Valider ce shift
+                        </a>
+                        <a name="action_mark_absent" type="object"
+                           role="menuitem" class="dropdown-item"
+                           t-if="!record.is_validated.raw_value and !record.is_absent.raw_value">
+                            <i class="fa fa-ban me-2 text-danger"/>Marquer absent
+                        </a>
+                        <a name="action_open_overtime_wizard" type="object"
+                           role="menuitem" class="dropdown-item"
+                           t-if="!record.is_validated.raw_value and !record.is_absent.raw_value">
+                            <i class="fa fa-plus me-2 text-info"/>+ Heures supp
+                        </a>
+                        <a name="action_open_replace_wizard" type="object"
+                           role="menuitem" class="dropdown-item"
+                           t-if="record.is_absent.raw_value and !record.replaced_by_slot_ids.raw_value.length">
+                            <i class="fa fa-refresh me-2 text-primary"/>Remplacer l'agent
+                        </a>
+                        <a name="action_cancel_validation" type="object"
+                           role="menuitem" class="dropdown-item"
+                           t-if="record.is_validated.raw_value or record.is_absent.raw_value">
+                            <i class="fa fa-undo me-2 text-warning"/>Annuler
+                        </a>
+                    </t>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="gs-card oe_kanban_global_click
+                                          #{record.is_night_shift.raw_value ? 'is-night' : ''}
+                                          #{['overdue'].includes(record.gs_status.raw_value) ? 'is-overdue' : ''}
+                                          #{['validated'].includes(record.gs_status.raw_value) ? 'is-validated' : ''}
+                                          #{['absent'].includes(record.gs_status.raw_value) ? 'is-absent' : ''}">
+
+                            <!-- HEADER : avatar + nom + matricule + menu -->
+                            <div class="gs-header">
+                                <img class="gs-avatar"
+                                     t-att-src="kanban_image('hr.employee', 'image_128', record.employee_id.raw_value)"
+                                     alt="Agent"/>
+                                <div class="gs-identity">
+                                    <div class="gs-name-row">
+                                        <div class="gs-name-block">
+                                            <div class="gs-name" t-esc="record.employee_short_name.value"/>
+                                            <span t-if="record.employee_cin.raw_value"
+                                                  class="gs-matricule"
+                                                  t-esc="record.employee_cin.value"/>
+                                        </div>
+                                    </div>
+                                    <div class="gs-role" t-esc="record.role_id.value"/>
+                                </div>
+                            </div>
+
+                            <!-- STATUS BADGES : statut + type (jour/nuit/heures) -->
+                            <div class="gs-status-row">
+                                <span t-if="record.gs_status.raw_value === 'pending'"
+                                      class="gs-badge gs-badge-pending">À valider</span>
+                                <span t-elif="record.gs_status.raw_value === 'overdue'"
+                                      class="gs-badge gs-badge-overdue">En retard</span>
+                                <span t-elif="record.gs_status.raw_value === 'validated'"
+                                      class="gs-badge gs-badge-validated">
+                                    <i class="fa fa-check"/> Validé
+                                </span>
+                                <span t-elif="record.gs_status.raw_value === 'absent'"
+                                      class="gs-badge gs-badge-absent">
+                                    <i class="fa fa-ban"/> Absent
+                                </span>
+                                <span t-else="" class="gs-badge gs-badge-upcoming">À venir</span>
+
+                                <span t-if="record.is_daily_paid.raw_value"
+                                      class="gs-badge gs-badge-type day">
+                                    <i class="fa fa-sun-o"/> JOUR
+                                </span>
+                                <span t-elif="record.is_night_shift.raw_value"
+                                      class="gs-badge gs-badge-type night">
+                                    <i class="fa fa-moon-o"/> NUIT
+                                    <span class="gs-hours-value">
+                                        <field name="duration_hours" widget="float_time"/>
+                                    </span>
+                                </span>
+                                <span t-else="" class="gs-badge gs-badge-type day">
+                                    <i class="fa fa-sun-o"/> JOUR
+                                    <span class="gs-hours-value">
+                                        <field name="duration_hours" widget="float_time"/>
+                                    </span>
+                                </span>
+                            </div>
+
+                            <!-- SCHEDULE : Date | Horaires | Pause -->
+                            <div class="gs-schedule">
+                                <div class="gs-schedule-item">
+                                    <div class="gs-schedule-label">
+                                        <i class="fa fa-calendar"/>Date
+                                    </div>
+                                    <div class="gs-schedule-value" t-esc="record.display_date_short.value"/>
+                                </div>
+                                <div class="gs-schedule-item">
+                                    <div class="gs-schedule-label">
+                                        <i class="fa fa-clock-o"/>Horaires
+                                    </div>
+                                    <div class="gs-time-range">
+                                        <field name="display_time_range"/>
+                                    </div>
+                                </div>
+                                <div class="gs-schedule-item"
+                                     groups="gs_project_planning.group_egida_admin_system">
+                                    <div class="gs-schedule-label">
+                                        <i class="fa fa-coffee"/>Pause
+                                    </div>
+                                    <div t-if="record.break_duration.raw_value"
+                                         class="gs-schedule-value"
+                                         t-esc="record.break_label.value"/>
+                                    <div t-if="record.break_range_label.raw_value"
+                                         class="gs-schedule-sub"
+                                         t-esc="record.break_range_label.value"/>
+                                    <div t-if="!record.break_duration.raw_value"
+                                         class="gs-schedule-value text-muted">—</div>
+                                </div>
+                            </div>
+
+                            <!-- DURATION pill : journalière vs horaire -->
+                            <div t-if="record.is_daily_paid.raw_value"
+                                 class="gs-duration is-daily">
+                                <span class="gs-duration-label">
+                                    <i class="fa fa-sun-o"/>
+                                    Durée journalière
+                                </span>
+                                <span class="gs-duration-value">1 jour</span>
+                            </div>
+                            <div t-else="" class="gs-duration">
+                                <span class="gs-duration-label">
+                                    <i class="fa fa-hourglass-half"/>
+                                    Durée horaire
+                                </span>
+                                <span class="gs-duration-value">
+                                    <field name="duration_hours" widget="float_time"/>
+                                </span>
+                            </div>
+
+                            <!-- REPLACEMENT NOTICE -->
+                            <div t-if="record.replaces_slot_id.raw_value" class="gs-replacement">
+                                <i class="fa fa-refresh"/>
+                                Remplacement — <field name="replacement_reason"/>
+                            </div>
+
+                            <!-- ACTIONS -->
+                            <div class="gs-actions">
+                                <button name="action_validate_for_payroll" type="object"
+                                        class="btn gs-btn-primary"
+                                        t-if="!record.is_validated.raw_value &amp;&amp; !record.is_absent.raw_value">
+                                    <i class="fa fa-check"/>Valider
+                                </button>
+                                <button name="action_mark_absent" type="object"
+                                        class="btn gs-btn-secondary danger"
+                                        t-if="!record.is_validated.raw_value &amp;&amp; !record.is_absent.raw_value">
+                                    <i class="fa fa-ban"/>Absent
+                                </button>
+                                <button name="action_open_overtime_wizard" type="object"
+                                        class="btn gs-btn-secondary info"
+                                        t-if="!record.is_validated.raw_value &amp;&amp; !record.is_absent.raw_value &amp;&amp; !record.is_daily_paid.raw_value">
+                                    <i class="fa fa-plus"/>H. supp
+                                </button>
+                                <button name="action_open_replace_wizard" type="object"
+                                        class="btn gs-btn-secondary primary"
+                                        t-if="record.is_absent.raw_value &amp;&amp; !record.replaced_by_slot_ids.raw_value.length">
+                                    <i class="fa fa-refresh"/>Remplacer
+                                </button>
+                                <button name="action_cancel_validation" type="object"
+                                        class="btn gs-btn-secondary warning"
+                                        t-if="record.is_validated.raw_value || record.is_absent.raw_value">
+                                    <i class="fa fa-undo"/>Annuler
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- =========================================================
+         Vue graphique pour le chef de projet
+         ========================================================= -->
+    <record id="view_planning_slot_graph_gs" model="ir.ui.view">
+        <field name="name">planning.slot.graph.gs</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <graph string="Heures par jour" type="bar" stacked="0">
+                <field name="start_datetime" interval="day"/>
+                <field name="duration_hours" type="measure" string="Heures"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- =========================================================
+         Vue pivot : employé × jour
+         ========================================================= -->
+    <record id="view_planning_slot_pivot_gs" model="ir.ui.view">
+        <field name="name">planning.slot.pivot.gs</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <pivot string="Heures par agent et par jour">
+                <field name="employee_id" type="row"/>
+                <field name="start_datetime" interval="day" type="col"/>
+                <field name="duration_hours" type="measure" string="Heures"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- =========================================================
+         Vue search avec filtres
+         ========================================================= -->
+    <record id="view_planning_slot_search_gs" model="ir.ui.view">
+        <field name="name">planning.slot.search.gs</field>
+        <field name="model">planning.slot</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <search string="Créneaux">
+                <field name="project_id"/>
+                <field name="employee_id"/>
+                <field name="role_id"/>
+                <separator/>
+                <filter name="filter_pending" string="À valider (passés)"
+                        domain="[('is_validated','=',False),('is_absent','=',False),('is_past','=',True)]"/>
+                <filter name="filter_overdue" string="⚠ En retard (&gt;48h)"
+                        domain="[('is_overdue','=',True)]"/>
+                <filter name="filter_validated" string="Validés"
+                        domain="[('is_validated','=',True)]"/>
+                <filter name="filter_absent" string="Absents"
+                        domain="[('is_absent','=',True)]"/>
+                <separator/>
+                <filter name="filter_today" string="Aujourd'hui"
+                        domain="[('start_datetime','&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')),
+                                 ('start_datetime','&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_yesterday" string="Hier"
+                        domain="[('start_datetime','&gt;=', (context_today() + relativedelta(days=-1)).strftime('%Y-%m-%d 00:00:00')),
+                                 ('start_datetime','&lt;', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_this_week" string="Cette semaine"
+                        domain="[('start_datetime','&gt;=', (context_today() + relativedelta(weeks=-1, days=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="filter_this_month" string="Ce mois"
+                        domain="[('start_datetime','&gt;=', context_today().strftime('%Y-%m-01 00:00:00'))]"/>
+                <separator/>
+                <group expand="0" string="Regrouper par">
+                    <filter name="group_by_day" string="Jour"
+                            context="{'group_by': 'start_datetime:day'}"/>
+                    <filter name="group_by_status" string="Statut"
+                            context="{'group_by': 'gs_status'}"/>
+                    <filter name="group_by_project" string="Projet"
+                            context="{'group_by': 'project_id'}"/>
+                    <filter name="group_by_employee" string="Employé"
+                            context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_by_role" string="Rôle"
+                            context="{'group_by': 'role_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- =========================================================
+         Actions de menu sur la liste planning.slot
+         ========================================================= -->
+    <record id="server_action_validate_slots" model="ir.actions.server">
+        <field name="name">✅ Valider pour la paie</field>
+        <field name="model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_validate_for_payroll()</field>
+    </record>
+
+    <record id="server_action_mark_slots_absent" model="ir.actions.server">
+        <field name="name">⛔ Marquer absent</field>
+        <field name="model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_mark_absent()</field>
+    </record>
+
+    <record id="server_action_cancel_slot_validation" model="ir.actions.server">
+        <field name="name">↩ Annuler la validation</field>
+        <field name="model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_cancel_validation()</field>
+    </record>
+
+    <record id="server_action_replace_slot" model="ir.actions.server">
+        <field name="name">🔄 Remplacer (agent absent)</field>
+        <field name="model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_model_id" ref="planning.model_planning_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+if len(records) != 1:
+    raise UserError("Sélectionnez UN SEUL shift à remplacer à la fois.")
+action = records.action_open_replace_wizard()
+        </field>
+    </record>
+
+</odoo>

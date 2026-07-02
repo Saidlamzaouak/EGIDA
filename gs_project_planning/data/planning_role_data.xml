@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="planning_role_security" model="planning.role">
+        <field name="name">Agent de sécurité</field>
+        <field name="color">1</field>
+    </record>
+
+    <record id="planning_role_cleaning" model="planning.role">
+        <field name="name">Femme / Homme de ménage</field>
+        <field name="color">4</field>
+    </record>
+
+    <record id="planning_role_manager" model="planning.role">
+        <field name="name">Manager / Chef d'équipe</field>
+        <field name="color">10</field>
+    </record>
+
+</odoo>

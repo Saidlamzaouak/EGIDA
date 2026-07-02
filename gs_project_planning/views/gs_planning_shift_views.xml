@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_shift_list" model="ir.ui.view">
+        <field name="name">gs.planning.shift.list</field>
+        <field name="model">gs.planning.shift</field>
+        <field name="arch" type="xml">
+            <list string="Shifts" editable="bottom"
+                  decoration-info="is_daily_paid">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="is_daily_paid" widget="boolean_toggle"
+                       optional="show" string="Forfait jour"/>
+                <field name="start_hour" widget="float_time"
+                       readonly="is_daily_paid"/>
+                <field name="end_hour" widget="float_time"
+                       readonly="is_daily_paid"/>
+                <field name="duration" widget="float_time"
+                       readonly="is_daily_paid"/>
+                <field name="break_start_hour" widget="float_time" optional="show"
+                       readonly="is_daily_paid"/>
+                <field name="break_end_hour" widget="float_time" optional="show"
+                       readonly="is_daily_paid"/>
+                <field name="break_duration" widget="float_time" optional="show"
+                       readonly="is_daily_paid"/>
+                <field name="paid_duration" widget="float_time" optional="hide"
+                       readonly="is_daily_paid"/>
+                <field name="crosses_midnight" optional="hide"/>
+                <field name="role_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gs_planning_shift_form" model="ir.ui.view">
+        <field name="name">gs.planning.shift.form</field>
+        <field name="model">gs.planning.shift</field>
+        <field name="arch" type="xml">
+            <form string="Shift">
+                <sheet>
+                    <widget name="web_ribbon" title="Archivé" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <widget name="web_ribbon" title="Forfait jour"
+                            bg_color="text-bg-info"
+                            invisible="not is_daily_paid"/>
+                    <group>
+                        <group string="Identification">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="role_id"/>
+                            <field name="sequence"/>
+                            <field name="is_daily_paid" widget="boolean_toggle"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Plage horaire">
+                            <field name="start_hour" widget="float_time"
+                                   readonly="is_daily_paid"/>
+                            <field name="end_hour" widget="float_time"
+                                   readonly="is_daily_paid"/>
+                            <field name="crosses_midnight" readonly="1"/>
+                            <field name="duration" widget="float_time" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Pause (optionnelle)" invisible="is_daily_paid">
+                        <group>
+                            <field name="break_start_hour" widget="float_time"/>
+                            <field name="break_end_hour" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="break_duration" widget="float_time" readonly="1"/>
+                            <field name="paid_duration" widget="float_time" readonly="1"
+                                   class="fw-bold text-success"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-info" role="alert"
+                         invisible="is_daily_paid">
+                        Si l'heure de fin est inférieure ou égale à l'heure de début,
+                        le shift est considéré comme passant minuit (ex. 22h → 06h
+                        signifie 22h ce jour et 06h le lendemain).
+                    </div>
+                    <div class="alert alert-primary" role="alert"
+                         invisible="not is_daily_paid">
+                        <i class="fa fa-info-circle me-1"/>
+                        <b>Forfait journalier</b> — l'agent est rémunéré à la journée
+                        (salaire fixe). Les horaires et la pause sont indicatifs et
+                        n'entrent pas dans le calcul de la paie. Le créneau affichera
+                        <b>« /jour »</b> sur le kanban planning.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gs_planning_shift" model="ir.actions.act_window">
+        <field name="name">Shifts</field>
+        <field name="res_model">gs.planning.shift</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configurer les plages de shifts utilisables sur les projets.
+            </p>
+            <p>
+                Les shifts standards (Sécurité 8h, 12h, Ménage, Manager) sont
+                créés automatiquement. Vous pouvez les ajuster ou en ajouter
+                de nouveaux (ex. shift 10h, shift 4h, etc.).
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_gs_planning_shift"
+              name="Shifts"
+              parent="project.menu_project_config"
+              action="action_gs_planning_shift"
+              sequence="100"/>
+
+</odoo>

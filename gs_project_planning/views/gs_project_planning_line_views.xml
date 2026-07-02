@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_project_planning_line_list" model="ir.ui.view">
+        <field name="name">gs.project.planning.line.list</field>
+        <field name="model">gs.project.planning.line</field>
+        <field name="arch" type="xml">
+            <list string="Affectations">
+                <field name="project_id"/>
+                <field name="employee_id"/>
+                <field name="role_id"/>
+                <field name="shift_id"/>
+            </list>
+        </field>
+    </record>
+
+</odoo>

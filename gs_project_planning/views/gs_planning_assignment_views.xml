@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_assignment_list" model="ir.ui.view">
+        <field name="name">gs.planning.assignment.list</field>
+        <field name="model">gs.planning.assignment</field>
+        <field name="arch" type="xml">
+            <list string="Affectations mensuelles" create="0">
+                <field name="period_month"/>
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="function_label" optional="show"/>
+                <field name="role_id" optional="hide"/>
+                <field name="pay_type"/>
+                <field name="rest_day"/>
+                <field name="schedule_note" optional="hide"/>
+                <field name="worked_days" sum="Jours"/>
+                <field name="daily_paid_days" optional="hide" sum="Jours forfait"/>
+                <field name="total_hours" sum="Total heures"/>
+                <field name="service_type" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gs_planning_assignment_form" model="ir.ui.view">
+        <field name="name">gs.planning.assignment.form</field>
+        <field name="model">gs.planning.assignment</field>
+        <field name="arch" type="xml">
+            <form string="Affectation mensuelle">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="project_id"/>
+                            <field name="period_month"/>
+                            <field name="service_type"/>
+                        </group>
+                        <group>
+                            <field name="function_label"/>
+                            <field name="role_id"/>
+                            <field name="pay_type"/>
+                            <field name="rest_day"/>
+                            <field name="schedule_note"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="worked_days"/>
+                        <field name="daily_paid_days"/>
+                        <field name="total_hours"/>
+                    </group>
+                    <notebook>
+                        <page string="Détail jour">
+                            <field name="day_ids">
+                                <list create="0">
+                                    <field name="date"/>
+                                    <field name="unit_type"/>
+                                    <field name="quantity"/>
+                                    <field name="hours"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_gs_planning_assignment_search" model="ir.ui.view">
+        <field name="name">gs.planning.assignment.search</field>
+        <field name="model">gs.planning.assignment</field>
+        <field name="arch" type="xml">
+            <search string="Affectations mensuelles">
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="function_label"/>
+                <field name="rest_day"/>
+                <filter name="proprete" string="Propreté"
+                        domain="[('service_type', '=', 'proprete')]"/>
+                <filter name="surveillance" string="Surveillance"
+                        domain="[('service_type', '=', 'surveillance')]"/>
+                <separator/>
+                <filter name="pay_hour" string="Horaire"
+                        domain="[('pay_type', '=', 'hour')]"/>
+                <filter name="pay_day" string="Journalier"
+                        domain="[('pay_type', '=', 'day')]"/>
+                <filter name="pay_month" string="Forfait mensuel"
+                        domain="[('pay_type', '=', 'month')]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter name="g_project" string="Projet"
+                            context="{'group_by': 'project_id'}"/>
+                    <filter name="g_employee" string="Employé"
+                            context="{'group_by': 'employee_id'}"/>
+                    <filter name="g_month" string="Mois"
+                            context="{'group_by': 'period_month'}"/>
+                    <filter name="g_pay" string="Mode de paie"
+                            context="{'group_by': 'pay_type'}"/>
+                    <filter name="g_service" string="Service"
+                            context="{'group_by': 'service_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gs_planning_assignment" model="ir.actions.act_window">
+        <field name="name">Affectations mensuelles</field>
+        <field name="res_model">gs.planning.assignment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_gs_planning_assignment_search"/>
+        <field name="context">{'search_default_g_project': 1}</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="gs_project_planning.PlanningSlotKanbanHeader">
+        <t t-call="web.KanbanHeader"/>
+        <div t-if="isGroupedByDate" class="gs-col-stats d-flex gap-2 px-2 pb-2 small">
+            <span class="gs-col-stat" title="Total des heures payées de cette colonne">
+                <i class="fa fa-hourglass-half me-1 text-muted"/>
+                <strong t-esc="totalHoursLabel"/>
+            </span>
+            <span class="gs-col-stat" title="Nombre d'agents effectifs (hors absents)">
+                <i class="fa fa-users me-1 text-muted"/>
+                <strong t-esc="effectiveCount"/> effectif<t t-if="effectiveCount &gt; 1">s</t>
+            </span>
+            <span t-if="absentCount" class="gs-col-stat text-danger"
+                  title="Agents absents">
+                <i class="fa fa-ban me-1"/>
+                <strong t-esc="absentCount"/> absent<t t-if="absentCount &gt; 1">s</t>
+            </span>
+            <span t-if="replacementCount" class="gs-col-stat text-info"
+                  title="Shifts couverts par un remplaçant">
+                <i class="fa fa-refresh me-1"/>
+                <strong t-esc="replacementCount"/> remplaçant<t t-if="replacementCount &gt; 1">s</t>
+            </span>
+        </div>
+        <div t-if="isGroupedByDate and hasPendingRecords" class="gs-day-validate-wrap px-2 pb-2">
+            <button class="btn btn-success btn-sm w-100"
+                    t-on-click.stop="onValidateDay"
+                    title="Valider tous les shifts non validés de cette colonne (jour, semaine ou mois selon le regroupement)">
+                <i class="fa fa-check me-1"/>Valider cette colonne
+            </button>
+        </div>
+    </t>
+
+</templates>

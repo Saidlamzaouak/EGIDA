@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Catégorie EGIDA dans les droits d'accès -->
+    <record id="module_category_egida" model="ir.module.category">
+        <field name="name">EGIDA</field>
+        <field name="sequence">90</field>
+    </record>
+
+    <!-- Groupe : Egida Administration Système
+         Contrôle la visibilité de zones d'administration (page Settings du
+         projet, détail de pause du kanban planning, etc.). -->
+    <record id="group_egida_admin_system" model="res.groups">
+        <field name="name">Egida Administration Système</field>
+        <field name="category_id" ref="module_category_egida"/>
+    </record>
+
+    <!-- Les administrateurs système héritent automatiquement du groupe. -->
+    <record id="base.group_system" model="res.groups">
+        <field name="implied_ids"
+               eval="[(4, ref('gs_project_planning.group_egida_admin_system'))]"/>
+    </record>
+
+    <!-- Groupe : Chef de projet
+         Voit uniquement les projets dont il est le responsable (user_id),
+         kanban projet allégé (pas de Configuration / menu ⋮), et peut VALIDER
+         réellement le planning déjà généré (planning manager + timesheet
+         approver). -->
+    <record id="group_egida_chef_projet" model="res.groups">
+        <field name="name">Chef de projet</field>
+        <field name="category_id" ref="module_category_egida"/>
+        <field name="implied_ids" eval="[
+            (4, ref('project.group_project_user')),
+            (4, ref('planning.group_planning_manager')),
+            (4, ref('hr_timesheet.group_hr_timesheet_approver')),
+        ]"/>
+    </record>
+
+    <!-- Règle GLOBALE conditionnelle : un chef de projet (non-manager) ne voit
+         que les projets dont il est responsable. Globale (sans groupe) donc
+         AND-ée pour tous ; neutre [(1,'=',1)] pour les autres profils. -->
+    <record id="project_chef_projet_own_rule" model="ir.rule">
+        <field name="name">EGIDA Chef de projet : uniquement ses projets</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[('user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('project.group_project_manager')) else [(1, '=', 1)]</field>
+    </record>
+
+    <!-- Même restriction sur les créneaux : le chef de projet ne voit/valide
+         que les créneaux des projets dont il est responsable. -->
+    <record id="planning_slot_chef_projet_rule" model="ir.rule">
+        <field name="name">EGIDA Chef de projet : créneaux de ses projets</field>
+        <field name="model_id" ref="planning.model_planning_slot"/>
+        <field name="domain_force">[('project_id.user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('project.group_project_manager')) else [(1, '=', 1)]</field>
+    </record>
+
+</odoo>

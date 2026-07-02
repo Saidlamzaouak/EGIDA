@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_replace_wizard_form" model="ir.ui.view">
+        <field name="name">gs.planning.replace.wizard.form</field>
+        <field name="model">gs.planning.replace.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Remplacer le shift">
+                <sheet>
+                    <div class="alert alert-warning" role="alert">
+                        Un nouveau slot sera créé pour le remplaçant aux mêmes
+                        horaires. Le shift d'origine reste marqué absent.
+                    </div>
+                    <group>
+                        <group string="Shift d'origine">
+                            <field name="original_slot_id" invisible="1"/>
+                            <field name="project_id"/>
+                            <field name="original_employee_id"/>
+                            <field name="start_datetime"/>
+                            <field name="end_datetime"/>
+                            <field name="role_id"/>
+                        </group>
+                        <group string="Remplacement">
+                            <field name="replacement_employee_id"
+                                   options="{'no_create': True}"/>
+                            <field name="reason" placeholder="Maladie, congé..."/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Confirmer le remplacement"
+                            type="object" name="action_confirm"
+                            class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

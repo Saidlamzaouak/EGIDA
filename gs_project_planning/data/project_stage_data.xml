@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="project_project_stage_won" model="project.project.stage">
+        <field name="name">Gagné</field>
+        <field name="sequence">15</field>
+        <field name="fold" eval="False"/>
+    </record>
+
+</odoo>

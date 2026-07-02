@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_import_wizard_form" model="ir.ui.view">
+        <field name="name">gs.planning.import.wizard.form</field>
+        <field name="model">gs.planning.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importer un planning détaillé">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Importez un fichier <strong>planingdet.xls EGIDA …</strong>
+                        (Propreté ou Surveillance). Le service et la période sont
+                        déduits du nom du fichier. Cliquez d'abord sur
+                        <strong>Analyser</strong> pour un aperçu sans écriture,
+                        puis sur <strong>Importer</strong>.
+                    </div>
+                    <group>
+                        <group string="Fichier">
+                            <field name="data_file" filename="filename"
+                                   readonly="state == 'done'"/>
+                            <field name="filename" invisible="1"/>
+                            <field name="service_type" readonly="state == 'done'"/>
+                            <label for="month" string="Période"/>
+                            <div class="o_row">
+                                <field name="month" readonly="state == 'done'"
+                                       placeholder="Mois"/>
+                                <span>/</span>
+                                <field name="year" readonly="state == 'done'"
+                                       placeholder="Année"/>
+                            </div>
+                        </group>
+                        <group string="Options" invisible="state == 'done'">
+                            <field name="create_missing_projects"/>
+                            <field name="create_missing_employees"/>
+                            <field name="create_partners"/>
+                            <field name="create_planning_lines"/>
+                            <field name="replace_existing"/>
+                        </group>
+                    </group>
+                    <field name="state" invisible="1"/>
+                    <field name="report" nolabel="1" readonly="1"
+                           invisible="not report"/>
+                </sheet>
+                <footer>
+                    <button string="Analyser" type="object" name="action_analyze"
+                            class="btn-secondary" invisible="state == 'done'"/>
+                    <button string="Importer" type="object" name="action_import"
+                            class="btn-primary" invisible="state == 'done'"
+                            confirm="Confirmez-vous l'import ? Les enregistrements manquants seront créés."/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gs_planning_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importer planning détaillé (.xls)</field>
+        <field name="res_model">gs.planning.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

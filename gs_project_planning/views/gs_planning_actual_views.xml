@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_actual_list" model="ir.ui.view">
+        <field name="name">gs.planning.actual.list</field>
+        <field name="model">gs.planning.actual</field>
+        <field name="arch" type="xml">
+            <list string="Heures réalisées" create="0">
+                <field name="date"/>
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="function_label" optional="show"/>
+                <field name="role_id" optional="hide"/>
+                <field name="unit_type"/>
+                <field name="quantity" sum="Valeurs"/>
+                <field name="hours" sum="Heures"/>
+                <field name="worked_days" sum="Jours" optional="hide"/>
+                <field name="note" optional="hide"/>
+                <field name="service_type" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gs_planning_actual_pivot" model="ir.ui.view">
+        <field name="name">gs.planning.actual.pivot</field>
+        <field name="model">gs.planning.actual</field>
+        <field name="arch" type="xml">
+            <pivot string="Heures réalisées">
+                <field name="project_id" type="row"/>
+                <field name="employee_id" type="row"/>
+                <field name="date" interval="day" type="col"/>
+                <field name="hours" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_gs_planning_actual_search" model="ir.ui.view">
+        <field name="name">gs.planning.actual.search</field>
+        <field name="model">gs.planning.actual</field>
+        <field name="arch" type="xml">
+            <search string="Heures réalisées">
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="function_label"/>
+                <filter name="proprete" string="Propreté"
+                        domain="[('service_type', '=', 'proprete')]"/>
+                <filter name="surveillance" string="Surveillance"
+                        domain="[('service_type', '=', 'surveillance')]"/>
+                <separator/>
+                <filter name="this_month" string="Ce mois"
+                        domain="[('date', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter name="g_project" string="Projet"
+                            context="{'group_by': 'project_id'}"/>
+                    <filter name="g_employee" string="Employé"
+                            context="{'group_by': 'employee_id'}"/>
+                    <filter name="g_month" string="Mois"
+                            context="{'group_by': 'period_month'}"/>
+                    <filter name="g_service" string="Service"
+                            context="{'group_by': 'service_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gs_planning_actual" model="ir.actions.act_window">
+        <field name="name">Heures réalisées</field>
+        <field name="res_model">gs.planning.actual</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="search_view_id" ref="view_gs_planning_actual_search"/>
+        <field name="context">{'search_default_g_project': 1}</field>
+    </record>
+
+    <menuitem id="menu_gs_planning_root"
+              name="Planning EGIDA"
+              parent="project.menu_main_pm"
+              groups="base.group_no_one"
+              sequence="90"/>
+
+    <menuitem id="menu_gs_planning_assignment"
+              name="Affectations mensuelles"
+              parent="menu_gs_planning_root"
+              action="action_gs_planning_assignment"
+              sequence="10"/>
+
+    <menuitem id="menu_gs_planning_actual"
+              name="Détail jour (heures réalisées)"
+              parent="menu_gs_planning_root"
+              action="action_gs_planning_actual"
+              sequence="20"/>
+
+    <menuitem id="menu_gs_planning_import"
+              name="Importer planning détaillé (.xls)"
+              parent="menu_gs_planning_root"
+              action="action_gs_planning_import_wizard"
+              groups="project.group_project_manager"
+              sequence="30"/>
+
+</odoo>
