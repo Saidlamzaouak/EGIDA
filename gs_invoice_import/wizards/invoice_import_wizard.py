@@ -97,6 +97,13 @@ class GsInvoiceImportWizard(models.TransientModel):
     skip_zero = fields.Boolean(
         string="Ignorer les documents à 0", default=True,
     )
+    batch_size = fields.Integer(
+        string="Taille des lots", default=20,
+        help="Nombre de factures créées entre deux sauvegardes (commit). "
+             "Évite les transactions trop longues et les coupures de "
+             "connexion sur les gros imports. L'import est relançable : les "
+             "factures déjà créées (même n°) sont automatiquement ignorées.",
+    )
 
     state = fields.Selection(
         [('draft', 'Configuration'), ('preview', 'Aperçu')],
@@ -413,38 +420,95 @@ class GsInvoiceImportWizard(models.TransientModel):
         docs, _skipped = self._parse()
         product = self._get_product()
         taxes = self.tax_id and [(6, 0, [self.tax_id.id])] or [(5, 0, 0)]
+        Move = self.env['account.move']
 
-        # cache clients pour éviter les recherches répétées
+        # Idempotence : on saute les documents dont le n° (ref) est déjà
+        # présent comme facture/avoir. Permet de relancer l'import après une
+        # coupure sans créer de doublons — il reprend là où il s'est arrêté.
+        wanted_refs = [d["num"] for d in docs if d["num"]]
+        already = set(Move.search([
+            ('ref', 'in', wanted_refs),
+            ('move_type', 'in', ('out_invoice', 'out_refund')),
+        ]).mapped('ref'))
+
+        batch_size = self.batch_size or 20
         partner_cache = {}
-        created = self.env['account.move']
+        created = Move
+        n_created = n_skipped_exist = n_skipped_zero = n_failed = 0
+        pending = 0  # documents créés depuis le dernier commit
+
         for d in docs:
             if self.skip_zero and d["amount_ht"] == 0.0:
+                n_skipped_zero += 1
                 continue
             if not d["partner_name"]:
+                n_skipped_zero += 1
                 continue
-            key = d["partner_name"].lower()
-            partner = partner_cache.get(key)
-            if not partner:
-                partner = self._get_or_create_partner(
-                    d["partner_name"], d["partner_code"])
-                partner_cache[key] = partner
+            if d["num"] in already:
+                n_skipped_exist += 1
+                continue
 
-            line_cmds = [(0, 0, {
-                'product_id': product.id,
-                'name': l["name"] or product.name,
-                'quantity': l["qty"],
-                'price_unit': l["pu"],
-                'tax_ids': taxes,
-            }) for l in d["lines"]]
+            # Chaque facture dans son savepoint : un échec isolé n'annule pas
+            # le lot en cours ni ne gèle la transaction.
+            try:
+                with self.env.cr.savepoint():
+                    key = d["partner_name"].lower()
+                    partner = partner_cache.get(key)
+                    if not partner:
+                        partner = self._get_or_create_partner(
+                            d["partner_name"], d["partner_code"])
+                        partner_cache[key] = partner
 
-            created |= self.env['account.move'].create({
-                'move_type': d["move_type"],
-                'partner_id': partner.id,
-                'invoice_date': d["date"],
-                'ref': d["num"],
-                'journal_id': self.journal_id.id,
-                'invoice_line_ids': line_cmds,
-            })
+                    line_cmds = [(0, 0, {
+                        'product_id': product.id,
+                        'name': l["name"] or product.name,
+                        'quantity': l["qty"],
+                        'price_unit': l["pu"],
+                        'tax_ids': taxes,
+                    }) for l in d["lines"]]
+
+                    move = Move.create({
+                        'move_type': d["move_type"],
+                        'partner_id': partner.id,
+                        'invoice_date': d["date"],
+                        'ref': d["num"],
+                        'journal_id': self.journal_id.id,
+                        'invoice_line_ids': line_cmds,
+                    })
+                created |= move
+                already.add(d["num"])
+                n_created += 1
+                pending += 1
+            except Exception as exc:  # pragma: no cover
+                n_failed += 1
+                _logger.warning("Import facture %s échoué : %s", d["num"], exc)
+
+            # Commit tous les `batch_size` documents pour éviter une
+            # transaction trop longue (coupure de connexion / timeout HTTP).
+            if pending >= batch_size:
+                self.env.cr.commit()
+                pending = 0
+
+        # Commit final du dernier lot partiel.
+        if pending:
+            self.env.cr.commit()
+
+        _logger.info(
+            "Import factures : %s créées, %s déjà présentes, %s ignorées "
+            "(0/sans client), %s en échec.",
+            n_created, n_skipped_exist, n_skipped_zero, n_failed)
+
+        self.preview_html = _(
+            "<div><h3>Import terminé (brouillon)</h3><ul>"
+            "<li><b>%(c)s</b> facture(s)/avoir(s) créé(s)</li>"
+            "<li>%(e)s déjà présent(s) — ignoré(s) (idempotence)</li>"
+            "<li>%(z)s ignoré(s) (montant 0 ou sans client)</li>"
+            "<li>%(f)s en échec (voir logs serveur)</li>"
+            "</ul><p>Import par lots de %(b)s avec sauvegarde intermédiaire.</p>"
+            "</div>"
+        ) % {'c': n_created, 'e': n_skipped_exist, 'z': n_skipped_zero,
+             'f': n_failed, 'b': batch_size}
+        self.state = 'preview'
 
         return {
             'type': 'ir.actions.act_window',

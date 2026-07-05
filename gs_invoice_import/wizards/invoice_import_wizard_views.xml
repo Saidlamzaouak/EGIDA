@@ -21,6 +21,7 @@
                         <field name="create_missing_partners"/>
                         <field name="keep_detail_lines"/>
                         <field name="skip_zero"/>
+                        <field name="batch_size"/>
                     </group>
                 </group>
                 <div invisible="state != 'preview'">
