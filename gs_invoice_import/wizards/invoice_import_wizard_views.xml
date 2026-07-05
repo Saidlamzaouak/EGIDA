@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_invoice_import_wizard_form" model="ir.ui.view">
+        <field name="name">gs.invoice.import.wizard.form</field>
+        <field name="model">gs.invoice.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import factures surveillance">
+                <field name="state" invisible="1"/>
+                <group invisible="state != 'draft'">
+                    <group string="Fichier">
+                        <field name="data_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                    </group>
+                    <group string="Paramètres comptables">
+                        <field name="journal_id"/>
+                        <field name="tax_id"/>
+                        <field name="product_id"/>
+                    </group>
+                    <group string="Options">
+                        <field name="create_missing_partners"/>
+                        <field name="keep_detail_lines"/>
+                        <field name="skip_zero"/>
+                    </group>
+                </group>
+                <div invisible="state != 'preview'">
+                    <field name="preview_html" readonly="1"/>
+                </div>
+                <footer>
+                    <button name="action_preview" type="object"
+                            string="Analyser" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_import" type="object"
+                            string="Importer (brouillon)" class="btn-primary"
+                            invisible="state != 'preview'"
+                            confirm="Créer les factures/avoirs en brouillon dans la comptabilité ?"/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gs_invoice_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import factures surveillance</field>
+        <field name="res_model">gs.invoice.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_gs_invoice_import"
+              name="Import factures surveillance"
+              parent="account.menu_finance_receivables"
+              action="action_gs_invoice_import_wizard"
+              sequence="100"/>
+
+</odoo>
