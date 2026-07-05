@@ -298,6 +298,110 @@ class ProjectProject(models.Model):
             },
         }
 
+    def action_apply_line_hours_to_slots(self):
+        """Applique la config horaire actuelle des lignes « Planning Resources »
+        aux créneaux FUTURS déjà générés.
+
+        Pour chaque projet sélectionné, et pour chaque ligne (= 1 employé),
+        met à jour l'heure de début/fin (depuis le shift de la ligne) et la
+        pause (depuis la ligne) des créneaux futurs, en conservant leur DATE.
+
+        - Ne touche qu'aux créneaux à partir de demain (fuseau utilisateur),
+          non validés et non absents. Le passé et les créneaux validés pour la
+          paie ne sont jamais modifiés.
+        - Déclenchée en lot depuis Action → « Appliquer les horaires du
+          planning » (liste ou formulaire projet).
+        """
+        Slot = self.env['planning.slot']
+        updated = 0
+        touched_projects = 0
+
+        for project in self:
+            if not project.planning_line_ids:
+                continue
+            tz_name = (self.env.user.tz
+                       or project.company_id.resource_calendar_id.tz
+                       or 'Africa/Casablanca')
+            local_tz = pytz.timezone(tz_name)
+
+            today_local = datetime.now(local_tz).date()
+            tomorrow_local = today_local + timedelta(days=1)
+            cutoff_utc = local_tz.localize(
+                datetime.combine(tomorrow_local, time.min)
+            ).astimezone(pytz.UTC).replace(tzinfo=None)
+
+            project_updated = 0
+            for line in project.planning_line_ids:
+                if not line.employee_id:
+                    continue
+                slots = Slot.search([
+                    ('project_id', '=', project.id),
+                    ('employee_id', '=', line.employee_id.id),
+                    ('start_datetime', '>=', cutoff_utc),
+                    ('is_validated', '=', False),
+                    ('is_absent', '=', False),
+                ])
+                for slot in slots:
+                    if not slot.start_datetime:
+                        continue
+                    # Jour local du créneau (on conserve la date, on change
+                    # seulement les heures).
+                    local_start = pytz.UTC.localize(
+                        slot.start_datetime).astimezone(local_tz)
+                    day = local_start.date()
+                    vals = self._slot_time_vals(line, day, local_tz)
+                    slot.write(vals)
+                    project_updated += 1
+
+            if project_updated:
+                touched_projects += 1
+                updated += project_updated
+
+        if not updated:
+            raise UserError(_(
+                "Aucun créneau futur non validé à mettre à jour sur la "
+                "sélection. Vérifiez que les projets ont des lignes "
+                "« Planning Resources » et des créneaux futurs générés."
+            ))
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Horaires appliqués'),
+                'message': _(
+                    "%(n)d créneau(x) mis à jour sur %(p)d projet(s). "
+                    "Seuls les créneaux futurs non validés ont été modifiés.",
+                    n=updated, p=touched_projects,
+                ),
+                'type': 'success',
+                'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
+            },
+        }
+
+    def _slot_time_vals(self, line, day, local_tz):
+        """Valeurs horaires d'un créneau pour une ligne un jour donné.
+
+        Ne renvoie que les champs d'HORAIRE (début/fin/pause) — contrairement
+        à _prepare_slot_vals, ne réinitialise ni l'état ni le rôle du créneau
+        existant."""
+        start_h = int(line.start_hour)
+        start_m = int(round((line.start_hour - start_h) * 60))
+        end_h = int(line.end_hour)
+        end_m = int(round((line.end_hour - end_h) * 60))
+
+        local_start = local_tz.localize(datetime.combine(day, time(start_h, start_m)))
+        end_day = day + timedelta(days=1) if line.crosses_midnight else day
+        local_end = local_tz.localize(datetime.combine(end_day, time(end_h, end_m)))
+
+        return {
+            'start_datetime': local_start.astimezone(pytz.UTC).replace(tzinfo=None),
+            'end_datetime': local_end.astimezone(pytz.UTC).replace(tzinfo=None),
+            'break_duration': line.break_duration or 0.0,
+            'is_daily_paid': line.shift_id.is_daily_paid,
+        }
+
     def action_open_planning_slots(self):
         self.ensure_one()
         kanban_view = self.env.ref('gs_project_planning.view_planning_slot_kanban_gs')

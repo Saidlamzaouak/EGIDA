@@ -104,6 +104,13 @@ class GsInvoiceImportWizard(models.TransientModel):
              "connexion sur les gros imports. L'import est relançable : les "
              "factures déjà créées (même n°) sont automatiquement ignorées.",
     )
+    max_per_run = fields.Integer(
+        string="Max. par exécution", default=200,
+        help="Nombre maximum de factures créées à chaque clic sur "
+             "« Importer ». Garde la requête sous le timeout serveur pour "
+             "éviter « Connexion perdue ». S'il reste des factures, recliquez "
+             "« Importer » : il reprend automatiquement (0 = pas de limite).",
+    )
 
     state = fields.Selection(
         [('draft', 'Configuration'), ('preview', 'Aperçu')],
@@ -378,6 +385,15 @@ class GsInvoiceImportWizard(models.TransientModel):
             'target': 'new',
         }
 
+    def _reopen(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': self._name,
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
     # ------------------------------------------------------------------ #
     #  Import
     # ------------------------------------------------------------------ #
@@ -431,7 +447,16 @@ class GsInvoiceImportWizard(models.TransientModel):
             ('move_type', 'in', ('out_invoice', 'out_refund')),
         ]).mapped('ref'))
 
+        # Documents éligibles (hors 0 / sans client) — sert au calcul du reste.
+        eligible = [
+            d for d in docs
+            if not (self.skip_zero and d["amount_ht"] == 0.0)
+            and d["partner_name"]
+        ]
+        remaining_before = sum(1 for d in eligible if d["num"] not in already)
+
         batch_size = self.batch_size or 20
+        max_per_run = self.max_per_run or 0  # 0 = pas de limite
         partner_cache = {}
         created = Move
         n_created = n_skipped_exist = n_skipped_zero = n_failed = 0
@@ -447,6 +472,10 @@ class GsInvoiceImportWizard(models.TransientModel):
             if d["num"] in already:
                 n_skipped_exist += 1
                 continue
+
+            # Plafond par exécution : on s'arrête pour rester sous le timeout.
+            if max_per_run and n_created >= max_per_run:
+                break
 
             # Chaque facture dans son savepoint : un échec isolé n'annule pas
             # le lot en cours ni ne gèle la transaction.
@@ -493,27 +522,44 @@ class GsInvoiceImportWizard(models.TransientModel):
         if pending:
             self.env.cr.commit()
 
+        remaining = remaining_before - n_created
         _logger.info(
-            "Import factures : %s créées, %s déjà présentes, %s ignorées "
-            "(0/sans client), %s en échec.",
-            n_created, n_skipped_exist, n_skipped_zero, n_failed)
+            "Import factures : %s créées, %s restantes, %s déjà présentes, "
+            "%s ignorées (0/sans client), %s en échec.",
+            n_created, remaining, n_skipped_exist, n_skipped_zero, n_failed)
 
-        self.preview_html = _(
-            "<div><h3>Import terminé (brouillon)</h3><ul>"
-            "<li><b>%(c)s</b> facture(s)/avoir(s) créé(s)</li>"
+        if remaining > 0:
+            status = _(
+                "<div class='alert alert-warning'><h3>Import partiel — "
+                "%(c)s créée(s), <b>%(r)s restante(s)</b></h3>"
+                "<p>➡️ Recliquez sur <b>« Importer »</b> pour continuer "
+                "(reprise automatique, sans doublon).</p></div>"
+            ) % {'c': n_created, 'r': remaining}
+        else:
+            status = _(
+                "<div class='alert alert-success'><h3>Import terminé "
+                "(brouillon)</h3></div>")
+
+        self.preview_html = status + _(
+            "<ul>"
+            "<li><b>%(c)s</b> facture(s)/avoir(s) créé(s) cette exécution</li>"
             "<li>%(e)s déjà présent(s) — ignoré(s) (idempotence)</li>"
             "<li>%(z)s ignoré(s) (montant 0 ou sans client)</li>"
             "<li>%(f)s en échec (voir logs serveur)</li>"
-            "</ul><p>Import par lots de %(b)s avec sauvegarde intermédiaire.</p>"
-            "</div>"
+            "</ul><p>Lots de %(b)s (sauvegarde intermédiaire), "
+            "max %(m)s par exécution.</p>"
         ) % {'c': n_created, 'e': n_skipped_exist, 'z': n_skipped_zero,
-             'f': n_failed, 'b': batch_size}
+             'f': n_failed, 'b': batch_size, 'm': max_per_run or _("illimité")}
         self.state = 'preview'
 
+        # Tant qu'il reste des factures, on garde le wizard ouvert pour
+        # permettre de recliquer « Importer ». Sinon on montre le résultat.
+        if remaining > 0:
+            return self._reopen()
         return {
             'type': 'ir.actions.act_window',
             'name': _("Factures importées (brouillon)"),
             'res_model': 'account.move',
             'view_mode': 'list,form',
-            'domain': [('id', 'in', created.ids)],
+            'domain': [('ref', 'in', [d["num"] for d in eligible])],
         }

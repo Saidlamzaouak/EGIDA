@@ -25,7 +25,7 @@ Règles métier :
     'author': "AH",
     'website': "https://www.metraco.ma",
     'category': 'Accounting',
-    'version': '18.0.1.2.0',
+    'version': '18.0.1.3.0',
     'depends': ['account'],
     'data': [
         'security/ir.model.access.csv',

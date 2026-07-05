@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- Action serveur : appliquer les horaires des lignes Planning Resources
+         aux créneaux futurs déjà générés (sélection multiple depuis la liste
+         ou le formulaire projet -> menu Action). -->
+    <record id="action_apply_line_hours_to_slots" model="ir.actions.server">
+        <field name="name">Appliquer les horaires du planning</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="binding_model_id" ref="project.model_project_project"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="groups_id" eval="[(4, ref('project.group_project_manager'))]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_apply_line_hours_to_slots()</field>
+    </record>
+
     <!-- Bouton 'Configuration' sur les cartes kanban projet
          + entrée dans le menu ⋮ en backup -->
     <record id="view_project_kanban_inherit_gs_planning" model="ir.ui.view">
