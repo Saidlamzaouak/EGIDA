@@ -10,3 +10,5 @@ access_gs_planning_actual_manager,gs.planning.actual manager,model_gs_planning_a
 access_gs_planning_assignment_user,gs.planning.assignment user,model_gs_planning_assignment,project.group_project_user,1,0,0,0
 access_gs_planning_assignment_manager,gs.planning.assignment manager,model_gs_planning_assignment,project.group_project_manager,1,1,1,1
 access_gs_planning_import_wizard_manager,gs.planning.import.wizard manager,model_gs_planning_import_wizard,project.group_project_manager,1,1,1,1
+access_gs_project_site_import_wizard_manager,gs.project.site.import.wizard manager,model_gs_project_site_import_wizard,project.group_project_manager,1,1,1,1
+access_gs_project_site_import_mapping_manager,gs.project.site.import.mapping manager,model_gs_project_site_import_mapping,project.group_project_manager,1,1,1,1

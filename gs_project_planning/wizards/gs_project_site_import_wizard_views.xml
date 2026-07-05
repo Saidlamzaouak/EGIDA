@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_project_site_import_wizard_form" model="ir.ui.view">
+        <field name="name">gs.project.site.import.wizard.form</field>
+        <field name="model">gs.project.site.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Clients / Sites / Superviseurs">
+                <field name="state" invisible="1"/>
+                <group invisible="state != 'draft'">
+                    <group string="Fichier">
+                        <field name="data_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                    </group>
+                    <group string="Options">
+                        <field name="create_missing_partners"/>
+                        <field name="update_existing"/>
+                    </group>
+                </group>
+
+                <div invisible="state == 'draft'">
+                    <field name="preview_html" readonly="1"/>
+                </div>
+
+                <group string="Mapping superviseur → utilisateur responsable"
+                       invisible="state != 'map'">
+                    <field name="mapping_line_ids" nolabel="1">
+                        <list editable="bottom" create="false" delete="false">
+                            <field name="controleur_code"/>
+                            <field name="site_count"/>
+                            <field name="user_id"/>
+                        </list>
+                    </field>
+                </group>
+
+                <footer>
+                    <button name="action_analyze" type="object" string="Analyser"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_import" type="object"
+                            string="Importer les projets" class="btn-primary"
+                            invisible="state != 'map'"
+                            confirm="Créer / mettre à jour les projets-sites ?"/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gs_project_site_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import Clients / Sites</field>
+        <field name="res_model">gs.project.site.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_gs_project_site_import"
+              name="Import Clients / Sites"
+              parent="project.menu_project_config"
+              action="action_gs_project_site_import_wizard"
+              sequence="90"/>
+
+</odoo>
