@@ -57,6 +57,13 @@ class GsProjectSiteImportWizard(models.TransientModel):
         help="Si coché, met à jour le client et le responsable des projets "
              "déjà présents. Sinon, ne touche qu'aux projets nouvellement créés.",
     )
+    create_missing_projects = fields.Boolean(
+        string="Créer les projets absents", default=False,
+        help="Décoché = mode « affectation seule » : on n'affecte le "
+             "responsable (chef de projet) qu'aux projets DÉJÀ créés et on "
+             "signale ceux introuvables, sans créer de nouveau projet. "
+             "Cochez pour créer aussi les projets manquants.",
+    )
     mapping_line_ids = fields.One2many(
         'gs.project.site.import.mapping', 'wizard_id',
         string="Superviseurs",
@@ -110,16 +117,42 @@ class GsProjectSiteImportWizard(models.TransientModel):
         self.mapping_line_ids = lines
 
         clients = {c for c, _, _ in sites}
+
+        # Liaison avec les projets existants : combien de sites retrouvent
+        # un projet déjà créé (par nom « CLIENT — SITE »), lesquels manquent.
+        Project = self.env['project.project']
+        matched, not_found = [], []
+        seen_names = set()
+        for client, site, _ctrl in sites:
+            name = _project_name(client, site)
+            if name in seen_names:
+                continue
+            seen_names.add(name)
+            if Project.search([('name', '=ilike', name)], limit=1):
+                matched.append(name)
+            else:
+                not_found.append(name)
+
         self.preview_html = _(
             "<div><h4>Analyse</h4><ul>"
             "<li>%(nsites)s ligne(s) site</li>"
             "<li>%(nclients)s client(s) distinct(s)</li>"
             "<li>%(nctrl)s superviseur(s) distinct(s) — mappez chacun "
             "à un utilisateur ci-dessous</li>"
-            "</ul><p>Superviseurs auto-reconnus : %(auto)s</p></div>"
+            "</ul>"
+            "<h4>Liaison avec les projets existants</h4><ul>"
+            "<li>✅ %(nmatch)s projet(s) retrouvé(s) → recevront le responsable</li>"
+            "<li>❓ %(nnf)s introuvable(s) %(nf_note)s</li>"
+            "</ul>"
+            "<p><b>Projets introuvables :</b> %(nf_list)s</p>"
+            "<p>Superviseurs auto-reconnus : %(auto)s</p></div>"
         ) % {
             'nsites': len(sites), 'nclients': len(clients),
             'nctrl': len(ctrl_counter),
+            'nmatch': len(matched), 'nnf': len(not_found),
+            'nf_note': (_("(seront créés)") if self.create_missing_projects
+                        else _("(ignorés — mode affectation seule)")),
+            'nf_list': ", ".join(not_found[:40]) or _("aucun"),
             'auto': ", ".join(
                 l[2]['controleur_code'] for l in lines if l[2]['user_id']
             ) or _("aucun (à mapper manuellement)"),
@@ -138,7 +171,8 @@ class GsProjectSiteImportWizard(models.TransientModel):
             for l in self.mapping_line_ids if l.user_id
         }
         partner_cache = {}
-        created = updated = 0
+        created = updated = not_found = no_super = 0
+        not_found_names = []
         created_projects = self.env['project.project']
 
         for client, site, ctrl in self._iter_sites(rows):
@@ -158,6 +192,8 @@ class GsProjectSiteImportWizard(models.TransientModel):
                 partner_cache[pkey] = partner
 
             user = ctrl_map.get(ctrl.upper()) if ctrl else False
+            if ctrl and not user:
+                no_super += 1
 
             project = Project.search([('name', '=ilike', name)], limit=1)
             if project:
@@ -170,7 +206,7 @@ class GsProjectSiteImportWizard(models.TransientModel):
                     if vals:
                         project.write(vals)
                         updated += 1
-            else:
+            elif self.create_missing_projects:
                 vals = {'name': name}
                 if partner:
                     vals['partner_id'] = partner.id
@@ -179,13 +215,27 @@ class GsProjectSiteImportWizard(models.TransientModel):
                 project = Project.create(vals)
                 created_projects |= project
                 created += 1
+            else:
+                # Mode « affectation seule » : projet introuvable, on signale.
+                not_found += 1
+                if len(not_found_names) < 40:
+                    not_found_names.append(name)
 
         self.state = 'done'
         self.preview_html = _(
             "<div><h4>Import terminé</h4><ul>"
+            "<li>✅ %(u)s projet(s) mis à jour (responsable affecté)</li>"
             "<li>%(c)s projet(s) créé(s)</li>"
-            "<li>%(u)s projet(s) mis à jour</li></ul></div>"
-        ) % {'c': created, 'u': updated}
+            "<li>❓ %(nf)s site(s) sans projet correspondant %(nf_note)s</li>"
+            "<li>⚠️ %(ns)s ligne(s) avec un superviseur non mappé "
+            "(responsable non affecté)</li>"
+            "</ul>%(nf_list)s</div>"
+        ) % {
+            'u': updated, 'c': created, 'nf': not_found, 'ns': no_super,
+            'nf_note': _("(non créés)") if not self.create_missing_projects else '',
+            'nf_list': (_("<p><b>Sites introuvables :</b> %s</p>")
+                        % ", ".join(not_found_names)) if not_found_names else '',
+        }
 
         if created_projects:
             return {

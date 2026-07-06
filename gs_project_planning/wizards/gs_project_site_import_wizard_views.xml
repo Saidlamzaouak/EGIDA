@@ -15,6 +15,7 @@
                     <group string="Options">
                         <field name="create_missing_partners"/>
                         <field name="update_existing"/>
+                        <field name="create_missing_projects"/>
                     </group>
                 </group>
 
