@@ -42,7 +42,7 @@
     <record id="project_chef_projet_own_rule" model="ir.rule">
         <field name="name">EGIDA Chef de projet : uniquement ses projets</field>
         <field name="model_id" ref="project.model_project_project"/>
-        <field name="domain_force">[('user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('project.group_project_manager')) else [(1, '=', 1)]</field>
+        <field name="domain_force">[('user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('gs_project_planning.group_egida_admin_system')) else [(1, '=', 1)]</field>
     </record>
 
     <!-- Même restriction sur les créneaux : le chef de projet ne voit/valide
@@ -50,7 +50,7 @@
     <record id="planning_slot_chef_projet_rule" model="ir.rule">
         <field name="name">EGIDA Chef de projet : créneaux de ses projets</field>
         <field name="model_id" ref="planning.model_planning_slot"/>
-        <field name="domain_force">[('project_id.user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('project.group_project_manager')) else [(1, '=', 1)]</field>
+        <field name="domain_force">[('project_id.user_id', '=', user.id)] if (user.has_group('gs_project_planning.group_egida_chef_projet') and not user.has_group('gs_project_planning.group_egida_admin_system')) else [(1, '=', 1)]</field>
     </record>
 
 </odoo>

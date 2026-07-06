@@ -25,14 +25,14 @@
             <xpath expr="//t[@t-name='menu']" position="inside">
                 <a name="action_open_project_config" type="object"
                    role="menuitem" class="dropdown-item"
-                   groups="project.group_project_manager,gs_project_planning.group_egida_admin_system">
+                   groups="gs_project_planning.group_egida_admin_system">
                     <i class="fa fa-cog me-2 text-primary"/>Configuration
                 </a>
             </xpath>
             <!-- Bouton Configuration (masqué pour le Chef d'équipe) -->
             <xpath expr="//t[@t-name='card']" position="inside">
                 <div class="gs-project-config mt-2 pt-2 border-top text-end"
-                     groups="project.group_project_manager,gs_project_planning.group_egida_admin_system">
+                     groups="gs_project_planning.group_egida_admin_system">
                     <button name="action_open_project_config" type="object"
                             class="btn btn-sm btn-info text-white fw-bold"
                             title="Configuration du projet">
