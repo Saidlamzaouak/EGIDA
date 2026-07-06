@@ -170,6 +170,22 @@ class PlanningSlot(models.Model):
                 f"{end_local.strftime('%H:%M')}{cross_marker}"
             )
 
+    @api.depends(
+        'start_datetime', 'end_datetime', 'resource_id.calendar_id.flexible_hours',
+        'company_id.resource_calendar_id', 'allocated_percentage', 'is_absent')
+    def _compute_allocated_hours(self):
+        """Un agent absent (même remplacé) n'a aucun temps alloué.
+
+        On garde tout le calcul standard d'Odoo (intervalles de travail,
+        pourcentage…) puis on force à 0 les slots absents. Le remplaçant porte
+        le temps sur son propre slot. Au décochage de l'absence, super()
+        recalcule le temps depuis les intervalles de travail : la valeur est
+        restaurée automatiquement pour les slots avec ressource.
+        """
+        super()._compute_allocated_hours()
+        for slot in self.filtered('is_absent'):
+            slot.allocated_hours = 0.0
+
     @api.depends('start_datetime', 'end_datetime', 'break_duration', 'is_absent')
     def _compute_duration_hours(self):
         for slot in self:

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Migration 18.0.2.31.0 : les shifts absents ne comptent plus d'heures.
 
-`duration_hours` est un champ stocké. Désormais un slot marqué absent a une
-durée payée nulle (l'agent n'a pas travaillé — c'est son remplaçant qui porte
-les heures sur son propre slot). Les slots absents déjà en base gardent leur
-ancienne valeur (ex. 8 h) tant qu'ils ne sont pas recalculés : ce script force
-la remise à 0 pour tous les slots absents existants.
+`duration_hours` (durée payée custom) ET `allocated_hours` (temps alloué
+standard planning) sont des champs stockés. Désormais un slot marqué absent a
+une durée nulle sur les deux (l'agent n'a pas travaillé — c'est son remplaçant
+qui porte les heures sur son propre slot). Les slots absents déjà en base
+gardent leur ancienne valeur (ex. 8 h / 7 h) tant qu'ils ne sont pas
+recalculés : ce script force la remise à 0 pour tous les slots absents.
 """
 import logging
 
@@ -21,7 +22,9 @@ def migrate(cr, version):
 
     absent_slots = env['planning.slot'].search([
         ('is_absent', '=', True),
+        '|',
         ('duration_hours', '!=', 0.0),
+        ('allocated_hours', '!=', 0.0),
     ])
     if not absent_slots:
         _logger.info("gs_project_planning: aucun shift absent à recalculer.")
@@ -32,3 +35,4 @@ def migrate(cr, version):
         len(absent_slots),
     )
     absent_slots._compute_duration_hours()
+    absent_slots._compute_allocated_hours()
