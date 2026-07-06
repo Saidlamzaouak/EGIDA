@@ -429,7 +429,15 @@ class PlanningSlot(models.Model):
                     "Annulez d'abord la validation.",
                     slot.employee_id.name or '',
                 ))
-        self.write({'is_absent': True})
+        # is_absent = True déclenche déjà la remise à 0 des durées via les
+        # computes, mais on les force explicitement ici pour garantir le 0
+        # même si l'ordre de recalcul change (l'agent absent n'a effectué
+        # aucune heure — c'est son remplaçant qui les porte).
+        self.write({
+            'is_absent': True,
+            'allocated_hours': 0.0,
+            'duration_hours': 0.0,
+        })
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
