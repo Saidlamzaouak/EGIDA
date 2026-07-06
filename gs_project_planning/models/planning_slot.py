@@ -170,10 +170,16 @@ class PlanningSlot(models.Model):
                 f"{end_local.strftime('%H:%M')}{cross_marker}"
             )
 
-    @api.depends('start_datetime', 'end_datetime', 'break_duration')
+    @api.depends('start_datetime', 'end_datetime', 'break_duration', 'is_absent')
     def _compute_duration_hours(self):
         for slot in self:
-            if slot.start_datetime and slot.end_datetime:
+            # Un agent absent (même remplacé) n'a effectué aucune heure : sa
+            # durée payée est nulle. Le remplaçant porte les heures sur son
+            # propre slot. Cohérent avec toutes les agrégations du module qui
+            # filtrent déjà is_absent = False (pivot/graphe inclus).
+            if slot.is_absent:
+                slot.duration_hours = 0.0
+            elif slot.start_datetime and slot.end_datetime:
                 gross = (slot.end_datetime - slot.start_datetime).total_seconds() / 3600.0
                 slot.duration_hours = max(0.0, gross - (slot.break_duration or 0.0))
             else:
