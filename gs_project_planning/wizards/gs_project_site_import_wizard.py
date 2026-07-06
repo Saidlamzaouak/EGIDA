@@ -160,6 +160,49 @@ class GsProjectSiteImportWizard(models.TransientModel):
         self.state = 'map'
         return self._reopen()
 
+    def action_create_missing_users(self):
+        """Crée un utilisateur (chef de projet) pour chaque superviseur non
+        encore mappé, et remplit le tableau. Les codes sont des abréviations
+        (HBIL, TARIK…) — l'utilisateur est créé avec ce code comme nom et un
+        login dérivé (ex. « aziz.labied »)."""
+        self.ensure_one()
+        Users = self.env['res.users'].with_context(no_reset_password=True)
+        group_user = self.env.ref('base.group_user')
+        group_chef = self.env.ref(
+            'gs_project_planning.group_egida_chef_projet',
+            raise_if_not_found=False)
+        created = reused = 0
+        for line in self.mapping_line_ids:
+            if line.user_id:
+                continue
+            code = line.controleur_code
+            login = code.lower().replace(' ', '.')
+            existing = Users.search(
+                ['|', ('login', '=ilike', login), ('name', '=ilike', code)],
+                limit=1)
+            if existing:
+                line.user_id = existing
+                reused += 1
+                continue
+            groups = [(4, group_user.id)]
+            if group_chef:
+                groups.append((4, group_chef.id))
+            user = Users.create({
+                'name': code,
+                'login': login,
+                'groups_id': groups,
+            })
+            line.user_id = user
+            created += 1
+
+        self.preview_html = _(
+            "<div class='alert alert-info'>%(c)s utilisateur(s) créé(s), "
+            "%(r)s rattaché(s) à un utilisateur existant. Vérifiez le tableau "
+            "puis cliquez « Importer les projets ».</div>"
+        ) % {'c': created, 'r': reused}
+        self.state = 'map'
+        return self._reopen()
+
     def action_import(self):
         self.ensure_one()
         rows = self._read_rows()

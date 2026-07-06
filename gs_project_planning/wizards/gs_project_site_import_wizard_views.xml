@@ -37,6 +37,10 @@
                 <footer>
                     <button name="action_analyze" type="object" string="Analyser"
                             class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_create_missing_users" type="object"
+                            string="Créer les utilisateurs manquants"
+                            class="btn-secondary" invisible="state != 'map'"
+                            confirm="Créer un utilisateur (chef de projet) pour chaque superviseur non mappé ?"/>
                     <button name="action_import" type="object"
                             string="Importer les projets" class="btn-primary"
                             invisible="state != 'map'"

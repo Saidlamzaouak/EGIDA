@@ -15,7 +15,7 @@ GS Project Planning
     'author': "AH",
     'website': "https://www.metraco.ma",
     'category': 'Services/Project',
-    'version': '18.0.2.29.0',
+    'version': '18.0.2.30.0',
     'depends': [
         'project',
         'project_forecast',
