@@ -53,6 +53,68 @@ export class PlanningSlotKanbanHeader extends KanbanHeader {
         });
     }
 
+    get isDayLocked() {
+        // Journée « verrouillée » = elle a des shifts et ils sont TOUS validés
+        // ou absents. Dans ce cas on n'autorise plus l'ajout d'agent.
+        const records = this.groupRecords;
+        if (!records.length) {
+            return false;
+        }
+        return records.every((r) => {
+            const d = (r && r.data) || {};
+            return d.is_validated || d.is_absent;
+        });
+    }
+
+    get canAddAgent() {
+        return this.isGroupedByDate && !!this.projectId && !this.isDayLocked;
+    }
+
+    get projectId() {
+        // project_id injecté via le contexte de l'action (default_project_id)
+        const ctx =
+            (this.group && this.group.context) ||
+            (this.props.list && this.props.list.context) ||
+            {};
+        return ctx.default_project_id || false;
+    }
+
+    get dayISO() {
+        // group.value est un DateTime Luxon (dernier instant de la journée
+        // locale) pour un regroupement start_datetime:day.
+        const v = this.group && this.group.value;
+        if (v && typeof v.toFormat === "function") {
+            return v.toFormat("yyyy-LL-dd");
+        }
+        return false;
+    }
+
+    async onAddAgent() {
+        const projectId = this.projectId;
+        const dayISO = this.dayISO;
+        if (!projectId) {
+            this.notification.add(
+                "Projet non identifié : ouvrez le planning depuis la fiche d'un projet.",
+                { type: "warning" }
+            );
+            return;
+        }
+        if (!dayISO) {
+            this.notification.add("Journée non identifiée pour cette colonne.", {
+                type: "warning",
+            });
+            return;
+        }
+        const action = await this.orm.call(
+            "planning.slot",
+            "action_open_add_agent_wizard",
+            [dayISO, projectId]
+        );
+        if (action && typeof action === "object") {
+            await this.action.doAction(action);
+        }
+    }
+
     get totalHours() {
         let total = 0;
         for (const r of this.groupRecords) {

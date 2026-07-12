@@ -15,7 +15,7 @@ GS Project Planning
     'author': "AH",
     'website': "https://www.metraco.ma",
     'category': 'Services/Project',
-    'version': '18.0.2.32.0',
+    'version': '18.0.2.33.0',
     'depends': [
         'project',
         'project_forecast',
@@ -32,6 +32,7 @@ GS Project Planning
         'data/gs_planning_shift_data.xml',
         'wizards/gs_planning_replace_wizard_views.xml',
         'wizards/gs_planning_overtime_wizard_views.xml',
+        'wizards/gs_planning_add_agent_wizard_views.xml',
         'wizards/gs_planning_import_wizard_views.xml',
         'wizards/gs_project_site_import_wizard_views.xml',
         'views/gs_planning_assignment_views.xml',

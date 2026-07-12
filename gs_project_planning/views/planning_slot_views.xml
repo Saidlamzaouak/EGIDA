@@ -82,6 +82,7 @@
                 <field name="replacement_reason"/>
                 <field name="is_daily_paid"/>
                 <field name="is_night_shift"/>
+                <field name="is_extra_agent"/>
                 <field name="break_duration"/>
                 <field name="break_label"/>
                 <field name="break_range_label"/>
@@ -162,6 +163,12 @@
                                     <i class="fa fa-ban"/> Absent
                                 </span>
                                 <span t-else="" class="gs-badge gs-badge-upcoming">À venir</span>
+
+                                <span t-if="record.is_extra_agent.raw_value"
+                                      class="gs-badge gs-badge-type"
+                                      title="Agent ajouté hors équipe du projet">
+                                    <i class="fa fa-user-plus"/> HORS ÉQUIPE
+                                </span>
 
                                 <span t-if="record.is_daily_paid.raw_value"
                                       class="gs-badge gs-badge-type day">

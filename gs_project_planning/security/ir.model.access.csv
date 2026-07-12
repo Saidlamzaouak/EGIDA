@@ -3,6 +3,7 @@ access_gs_project_planning_line_user,gs.project.planning.line user,model_gs_proj
 access_gs_project_planning_line_manager,gs.project.planning.line manager,model_gs_project_planning_line,project.group_project_manager,1,1,1,1
 access_gs_planning_replace_wizard_manager,gs.planning.replace.wizard manager,model_gs_planning_replace_wizard,project.group_project_manager,1,1,1,1
 access_gs_planning_overtime_wizard_manager,gs.planning.overtime.wizard manager,model_gs_planning_overtime_wizard,project.group_project_manager,1,1,1,1
+access_gs_planning_add_agent_wizard_manager,gs.planning.add.agent.wizard manager,model_gs_planning_add_agent_wizard,project.group_project_manager,1,1,1,1
 access_gs_planning_shift_user,gs.planning.shift user,model_gs_planning_shift,project.group_project_user,1,0,0,0
 access_gs_planning_shift_manager,gs.planning.shift manager,model_gs_planning_shift,project.group_project_manager,1,1,1,1
 access_gs_planning_actual_user,gs.planning.actual user,model_gs_planning_actual,project.group_project_user,1,0,0,0

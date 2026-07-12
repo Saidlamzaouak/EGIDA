@@ -16,7 +16,7 @@
 
             <!-- Add Employees tab -->
             <xpath expr="//notebook" position="inside">
-                <page string="Planning Resources" name="planning_employees">
+                <page string="Planning Resources" name="planning_employees" invisible="1">
                     <separator string="Assigned Employees for Planning"/>
                     <field name="employee_ids" widget="many2many_tags"/>
                 </page>

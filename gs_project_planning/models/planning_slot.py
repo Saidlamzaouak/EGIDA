@@ -112,6 +112,13 @@ class PlanningSlot(models.Model):
     replacement_reason = fields.Char(
         string="Motif du remplacement", copy=False,
     )
+    is_extra_agent = fields.Boolean(
+        string="Agent ajouté hors équipe", default=False, copy=False, index=True,
+        help="Agent ajouté manuellement à une journée depuis le kanban, sans "
+             "appartenir à l'équipe du projet. Bypass la contrainte "
+             "d'appartenance à l'équipe et n'est pas compté dans le plafond "
+             "horaire quotidien du projet (ajout exceptionnel).",
+    )
 
     def _compute_is_past(self):
         now = fields.Datetime.now()
@@ -291,14 +298,18 @@ class PlanningSlot(models.Model):
                     e=conflict.end_datetime,
                 ))
 
-    @api.constrains('employee_id', 'project_id', 'replaces_slot_id')
+    @api.constrains('employee_id', 'project_id', 'replaces_slot_id', 'is_extra_agent')
     def _check_employee_in_project_team(self):
-        """L'employé doit faire partie de l'équipe du projet — sauf en remplacement."""
+        """L'employé doit faire partie de l'équipe du projet — sauf en remplacement
+        ou ajout ponctuel d'un agent hors équipe."""
         for slot in self:
             if not (slot.employee_id and slot.project_id):
                 continue
             if slot.replaces_slot_id:
                 # Remplacement ponctuel : bypass de la team du projet.
+                continue
+            if slot.is_extra_agent:
+                # Agent ajouté manuellement à une journée (hors équipe) : bypass.
                 continue
             team = slot.project_id.allowed_employee_ids
             if team and slot.employee_id not in team:
@@ -323,6 +334,9 @@ class PlanningSlot(models.Model):
                 continue
             if slot.project_id.daily_hour_limit <= 0:
                 continue
+            if slot.is_extra_agent:
+                # Ajout manuel exceptionnel : ne consomme pas le quota du jour.
+                continue
             impacted[slot.project_id].add(slot.start_datetime.date())
 
         for project, days in impacted.items():
@@ -332,6 +346,7 @@ class PlanningSlot(models.Model):
             day_slots = self.search([
                 ('project_id', '=', project.id),
                 ('is_absent', '=', False),
+                ('is_extra_agent', '=', False),
                 ('start_datetime', '>=', datetime.combine(day_start, datetime.min.time())),
                 ('start_datetime', '<', datetime.combine(day_end, datetime.min.time())),
             ])
@@ -543,6 +558,52 @@ class PlanningSlot(models.Model):
                 day.strftime('%d/%m/%Y'),
             ))
         return slots.action_validate_for_payroll()
+
+    @api.model
+    def action_open_add_agent_wizard(self, day_value, project_id=False):
+        """Ouvre le wizard d'ajout d'un agent (éventuellement hors équipe) sur
+        une journée donnée. Appelé depuis l'en-tête de colonne du kanban.
+
+        - day_value : str ISO 'YYYY-MM-DD' — la journée locale de la colonne.
+        - project_id : id du projet (issu du contexte du kanban).
+
+        Prépare des horaires par défaut (08:00 → 17:00 en TZ utilisateur) que
+        le chef de projet ajustera dans le wizard."""
+        if not project_id:
+            raise UserError(_(
+                "Impossible de déterminer le projet. Ouvrez le planning "
+                "depuis la fiche d'un projet pour ajouter un agent."
+            ))
+        if not day_value:
+            raise UserError(_("Aucune journée fournie pour l'ajout d'agent."))
+        try:
+            day = date.fromisoformat(str(day_value)[:10])
+        except ValueError:
+            raise UserError(_("Valeur de jour invalide : %s", day_value))
+
+        tz_name = self.env.user.tz or 'Africa/Casablanca'
+        tz = pytz.timezone(tz_name)
+        default_start = (
+            tz.localize(datetime.combine(day, datetime_time(8, 0)))
+            .astimezone(pytz.UTC).replace(tzinfo=None)
+        )
+        default_end = (
+            tz.localize(datetime.combine(day, datetime_time(17, 0)))
+            .astimezone(pytz.UTC).replace(tzinfo=None)
+        )
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Ajouter un agent — %s', day.strftime('%d/%m/%Y')),
+            'res_model': 'gs.planning.add.agent.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_project_id': project_id,
+                'default_day': fields.Date.to_string(day),
+                'default_start_datetime': fields.Datetime.to_string(default_start),
+                'default_end_datetime': fields.Datetime.to_string(default_end),
+            },
+        }
 
     def action_open_overtime_wizard(self):
         """Ouvre le wizard d'ajout d'heures supp pour ce shift."""

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_gs_planning_add_agent_wizard_form" model="ir.ui.view">
+        <field name="name">gs.planning.add.agent.wizard.form</field>
+        <field name="model">gs.planning.add.agent.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Ajouter un agent">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Un créneau sera créé pour cet agent sur cette journée.
+                        L'agent n'a pas besoin d'appartenir à l'équipe du projet :
+                        le créneau est marqué « ajout hors équipe » et n'entre pas
+                        dans le plafond horaire quotidien.
+                    </div>
+                    <group>
+                        <group string="Journée">
+                            <field name="project_id"/>
+                            <field name="day"/>
+                        </group>
+                        <group string="Agent">
+                            <field name="in_team" invisible="1"/>
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <div class="text-muted" invisible="not in_team"
+                                 colspan="2">
+                                <i class="fa fa-info-circle me-1"/>Cet agent fait
+                                déjà partie de l'équipe du projet.
+                            </div>
+                            <field name="role_id"/>
+                        </group>
+                    </group>
+                    <group string="Horaires">
+                        <group>
+                            <field name="start_datetime"/>
+                            <field name="end_datetime"/>
+                        </group>
+                        <group>
+                            <field name="break_duration" widget="float_time"/>
+                            <field name="is_daily_paid"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Ajouter l'agent"
+                            type="object" name="action_confirm"
+                            class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

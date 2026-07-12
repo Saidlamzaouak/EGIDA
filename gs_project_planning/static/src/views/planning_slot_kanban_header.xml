@@ -30,6 +30,13 @@
                 <i class="fa fa-check me-1"/>Valider cette colonne
             </button>
         </div>
+        <div t-if="canAddAgent" class="gs-day-add-agent-wrap px-2 pb-2">
+            <button class="btn btn-outline-primary btn-sm w-100"
+                    t-on-click.stop="onAddAgent"
+                    title="Ajouter un agent sur cette journée — même s'il n'appartient pas à l'équipe du projet">
+                <i class="fa fa-user-plus me-1"/>Ajouter un agent
+            </button>
+        </div>
     </t>
 
 </templates>
