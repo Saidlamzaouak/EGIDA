@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from . import gs_rest_weekday
 from . import hr_employee
 from . import gs_planning_shift
 from . import project_project

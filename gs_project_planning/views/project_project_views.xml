@@ -14,6 +14,18 @@
         <field name="code">action = records.action_apply_line_hours_to_slots()</field>
     </record>
 
+    <!-- Action serveur : recopier le jour de repos des fiches employés vers
+         les lignes Planning Resources. -->
+    <record id="action_apply_employee_rest_weekday" model="ir.actions.server">
+        <field name="name">Appliquer le jour de repos des employés</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="binding_model_id" ref="project.model_project_project"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="groups_id" eval="[(4, ref('project.group_project_manager'))]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_apply_employee_rest_weekday()</field>
+    </record>
+
     <!-- Bouton 'Configuration' sur les cartes kanban projet
          + entrée dans le menu ⋮ en backup -->
     <record id="view_project_kanban_inherit_gs_planning" model="ir.ui.view">
@@ -88,6 +100,12 @@
                         string="Synchroniser config shifts"
                         invisible="not planning_line_ids"
                         confirm="Recopier les pauses et rôles par défaut depuis la configuration actuelle des shifts vers les lignes d'affectation ?"
+                        groups="project.group_project_manager"/>
+                <button name="action_apply_employee_rest_weekday"
+                        type="object"
+                        string="Appliquer jours de repos"
+                        invisible="not planning_line_ids"
+                        confirm="Recopier le jour de repos de chaque fiche employé vers les lignes Planning Resources de ce projet ?"
                         groups="project.group_project_manager"/>
                 <button name="action_publish_planning"
                         type="object"
@@ -169,6 +187,9 @@
                                    domain="[('id', 'in', parent.allowed_employee_ids)]"/>
                             <field name="role_id"/>
                             <field name="shift_id"/>
+                            <field name="rest_weekday_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   optional="show"/>
                             <field name="start_hour" widget="float_time" optional="hide"/>
                             <field name="end_hour" widget="float_time" optional="hide"/>
                             <field name="break_start_hour" widget="float_time"

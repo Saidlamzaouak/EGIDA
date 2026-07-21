@@ -1,27 +1,37 @@
 /* ============================================================
  * Carte kanban planning.slot — design "carte-validation"
+ * Thème TEAL (aligné sur la maquette filtre_semaine_validation)
  * ============================================================ */
 
 .o_planning_slot_kanban_gs {
 
-  --gs-card-bg: #ffffff;
-  --gs-ink: #0f1419;
-  --gs-ink-2: #3a4250;
-  --gs-muted: #8a93a3;
-  --gs-line: #ececf0;
-  --gs-line-soft: #f4f4f7;
+  /* ----- Palette (maquette) ---------------------------------- */
+  --gs-teal:        #00a99d;
+  --gs-teal-dark:   #00877d;
+  --gs-teal-soft:   #e0f5f3;
 
-  --gs-accent: #ff7849;
-  --gs-accent-soft: #fff1ea;
-  --gs-success: #10b981;
-  --gs-danger: #e11d48;
-  --gs-danger-soft: #fde8ee;
-  --gs-info: #4f46e5;
-  --gs-info-soft: #eeedfd;
-  --gs-plum: #3f2a45;
-  --gs-plum-soft: #f1eef4;
-  --gs-night: #1e2659;
-  --gs-night-soft: #e8eaf6;
+  --gs-card-bg:     #ffffff;
+  --gs-ink:         #1f2937;
+  --gs-ink-2:       #374151;
+  --gs-muted:       #6b7280;
+  --gs-line:        #e5e7eb;
+  --gs-line-soft:   #f3f4f6;
+  --gs-bg:          #f7f8fa;
+
+  --gs-accent:      var(--gs-teal);
+  --gs-accent-soft: var(--gs-teal-soft);
+  --gs-success:     #28a745;
+  --gs-success-soft:#e6f6ea;
+  --gs-danger:      #e5484d;
+  --gs-danger-soft: #fdeaea;
+  --gs-amber:       #d97706;
+  --gs-amber-soft:  #fdf1e0;
+  --gs-info:        #00877d;
+  --gs-info-soft:   #e0f5f3;
+  --gs-plum:        #7a4b63;
+  --gs-plum-soft:   #f4eef1;
+  --gs-night:       #7a4b63;
+  --gs-night-soft:  #f4eef1;
 
   --gs-radius: 14px;
   --gs-radius-sm: 10px;
@@ -30,69 +40,58 @@
   .gs-card {
     width: 100%;
     background: var(--gs-card-bg);
-    border-radius: var(--gs-radius);
-    box-shadow: 0 1px 2px rgba(15,20,25,.04),
-                0 8px 18px -8px rgba(15,20,25,.12);
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(15,20,25,.05);
+    border: 1px solid var(--gs-line);
     transition: transform .15s ease, box-shadow .15s ease;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont,
-                 'Segoe UI', Roboto, sans-serif;
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+                 Roboto, sans-serif;
     color: var(--gs-ink);
   }
   .gs-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 1px 2px rgba(15,20,25,.04),
-                0 14px 28px -10px rgba(15,20,25,.16);
+    box-shadow: 0 8px 18px -8px rgba(0,0,0,.16);
   }
 
-  /* Top accent stripe */
+  /* Top accent stripe (statut) */
   .gs-card::before {
     content: "";
     position: absolute;
     inset: 0 0 auto 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--gs-accent) 0%, #ffb37a 100%);
+    background: var(--gs-teal);
     z-index: 1;
   }
-  .gs-card.is-night::before {
-    background: linear-gradient(90deg, #4c5fd5 0%, #8b95e8 100%);
-  }
-  .gs-card.is-validated::before {
-    background: linear-gradient(90deg, var(--gs-success) 0%, #6ee7b7 100%);
-  }
-  .gs-card.is-overdue::before {
-    background: linear-gradient(90deg, var(--gs-danger) 0%, #fb7185 100%);
-  }
+  .gs-card.is-night::before   { background: var(--gs-plum); }
+  .gs-card.is-validated::before { background: var(--gs-success); }
+  .gs-card.is-overdue::before   { background: var(--gs-danger); }
   .gs-card.is-absent {
-    opacity: .72;
-    .gs-name { text-decoration: line-through; }
+    opacity: .78;
+    .gs-name { text-decoration: line-through; color: var(--gs-muted); }
   }
-  .gs-card.is-absent::before {
-    background: linear-gradient(90deg, #6b7280 0%, #9ca3af 100%);
-  }
+  .gs-card.is-absent::before { background: #9ca3af; }
 
   /* ----- Header --------------------------------------------- */
   .gs-header {
-    padding: 14px 14px 10px;
+    padding: 16px 16px 10px;
     display: flex;
     align-items: flex-start;
-    gap: 11px;
+    gap: 12px;
   }
 
   .gs-avatar {
     flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     object-fit: cover;
-    box-shadow: 0 3px 8px -2px rgba(15,20,25,.25),
-                inset 0 1px 0 rgba(255,255,255,.25);
-    background: linear-gradient(135deg, #ff7849 0%, #e85a2c 100%);
+    box-shadow: 0 3px 8px -2px rgba(0,0,0,.2);
+    background: linear-gradient(135deg, #17c3b2 0%, #0aa396 100%);
   }
   .gs-card.is-night .gs-avatar {
-    background: linear-gradient(135deg, #4c83f5 0%, #2966d8 100%);
+    background: linear-gradient(135deg, #a86d85 0%, #7a4b63 100%);
   }
 
   .gs-identity { flex: 1; min-width: 0; }
@@ -107,40 +106,39 @@
   .gs-name-block { min-width: 0; flex: 1; }
 
   .gs-name {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--gs-ink);
     line-height: 1.25;
-    letter-spacing: -.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .gs-matricule {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 10.5px;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 11px;
     font-weight: 500;
     color: var(--gs-muted);
-    background: var(--gs-line-soft);
-    padding: 2px 6px;
-    border-radius: 5px;
+    background: var(--gs-bg);
+    border: 1px solid var(--gs-line);
+    padding: 1px 8px;
+    border-radius: 6px;
     display: inline-block;
     margin-top: 5px;
-    letter-spacing: .02em;
   }
 
   .gs-role {
-    font-size: 12px;
-    color: var(--gs-ink-2);
+    font-size: 13px;
+    color: var(--gs-muted);
     margin-top: 6px;
   }
 
   /* ----- Status badges -------------------------------------- */
   .gs-status-row {
-    padding: 0 14px;
+    padding: 0 16px;
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     align-items: center;
   }
@@ -149,30 +147,27 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 9px 4px 8px;
+    padding: 4px 10px;
     border-radius: 999px;
-    font-size: 10.5px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: .01em;
     line-height: 1.4;
   }
 
   .gs-badge-pending {
-    background: var(--gs-accent-soft);
-    color: #c14a18;
+    background: var(--gs-teal-soft);
+    color: var(--gs-teal-dark);
   }
   .gs-badge-pending::before {
     content: "";
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--gs-accent);
-    box-shadow: 0 0 0 2.5px rgba(255,120,73,.2);
-    animation: gs-pulse 2s ease-in-out infinite;
+    background: var(--gs-teal);
   }
   .gs-badge-upcoming {
-    background: var(--gs-info-soft);
-    color: var(--gs-info);
+    background: var(--gs-teal-soft);
+    color: var(--gs-teal-dark);
   }
   .gs-badge-overdue {
     background: var(--gs-danger-soft);
@@ -180,60 +175,42 @@
   }
   .gs-badge-overdue::before {
     content: "";
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--gs-danger);
-    box-shadow: 0 0 0 2.5px rgba(225,29,72,.2);
-    animation: gs-pulse-danger 2s ease-in-out infinite;
   }
   .gs-badge-validated {
-    background: rgba(16,185,129,.12);
-    color: #047857;
+    background: var(--gs-success-soft);
+    color: var(--gs-success);
   }
   .gs-badge-absent {
-    background: #eef0f3;
-    color: #4b5563;
-  }
-
-  @keyframes gs-pulse {
-    0%, 100% { box-shadow: 0 0 0 2.5px rgba(255,120,73,.2); }
-    50%      { box-shadow: 0 0 0 4.5px rgba(255,120,73,.06); }
-  }
-  @keyframes gs-pulse-danger {
-    0%, 100% { box-shadow: 0 0 0 2.5px rgba(225,29,72,.2); }
-    50%      { box-shadow: 0 0 0 4.5px rgba(225,29,72,.06); }
+    background: #f3f4f6;
+    color: var(--gs-muted);
   }
 
   .gs-badge-type {
-    text-transform: uppercase;
-    font-size: 9.5px;
-    letter-spacing: .07em;
+    background: var(--gs-bg);
+    color: var(--gs-muted);
+    border: 1px solid var(--gs-line);
   }
-  .gs-badge-type.day {
-    background: var(--gs-plum-soft);
-    color: var(--gs-plum);
-  }
-  .gs-badge-type.night {
-    background: var(--gs-night-soft);
-    color: var(--gs-night);
-  }
+  .gs-badge-type.day  { background: var(--gs-bg);        color: var(--gs-muted); }
+  .gs-badge-type.night{ background: var(--gs-plum-soft); color: var(--gs-plum); border-color: transparent; }
   .gs-badge-type .gs-hours-value {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
     font-weight: 700;
-    letter-spacing: -.01em;
   }
 
-  /* ----- Schedule block ------------------------------------- */
+  /* ----- Schedule block (grid3) ----------------------------- */
   .gs-schedule {
-    margin: 8px 12px 0;
-    padding: 8px 10px;
-    background: linear-gradient(180deg, #fafbfc 0%, #f5f6f8 100%);
+    margin: 12px 16px 0;
+    background: #fff;
     border-radius: var(--gs-radius-sm);
-    border: 1px solid var(--gs-line-soft);
+    border: 1px solid var(--gs-line);
+    overflow: hidden;
     display: grid;
-    grid-template-columns: 1fr 1.2fr 0.9fr;
-    gap: 8px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
   }
 
   .gs-schedule-item {
@@ -241,24 +218,13 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    padding: 8px 10px;
+    border-right: 1px solid var(--gs-line);
   }
-
-  .gs-schedule-item + .gs-schedule-item {
-    position: relative;
-    padding-left: 8px;
-  }
-  .gs-schedule-item + .gs-schedule-item::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 3px;
-    bottom: 3px;
-    width: 1px;
-    background: var(--gs-line);
-  }
+  .gs-schedule-item:last-child { border-right: none; }
 
   .gs-schedule-label {
-    font-size: 8.5px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--gs-muted);
     text-transform: uppercase;
@@ -269,95 +235,92 @@
   }
 
   .gs-schedule-value {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--gs-ink);
-    letter-spacing: -.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-top: 2px;
   }
 
   .gs-schedule-sub {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--gs-muted);
     font-weight: 500;
   }
 
   .gs-time-range {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
     font-weight: 700;
-    font-size: 10.5px;
-    letter-spacing: -.02em;
+    font-size: 13px;
     display: flex;
     align-items: center;
-    gap: 1px;
+    gap: 2px;
     flex-wrap: wrap;
     color: var(--gs-ink);
     line-height: 1.3;
+    margin-top: 2px;
   }
-  .gs-time-range .gs-arrow { color: var(--gs-accent); font-weight: 700; }
-  .gs-card.is-night .gs-time-range .gs-arrow { color: #4c5fd5; }
+  .gs-time-range .gs-arrow { color: var(--gs-teal); font-weight: 700; }
+  .gs-card.is-night .gs-time-range .gs-arrow { color: var(--gs-plum); }
 
   .gs-nextday {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
     font-size: 9px;
     font-weight: 700;
-    background: var(--gs-night);
+    background: var(--gs-plum);
     color: white;
     padding: 1px 5px;
     border-radius: 4px;
     margin-left: 3px;
-    letter-spacing: .02em;
   }
 
   /* ----- Duration pill -------------------------------------- */
   .gs-duration {
-    margin: 8px 12px 0;
+    margin: 12px 16px 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
-    background: var(--gs-line-soft);
-    border-radius: 7px;
-    font-size: 10.5px;
+    padding: 8px 12px;
+    background: var(--gs-teal-soft);
+    border-radius: 8px;
+    font-size: 12px;
   }
   .gs-duration.is-daily {
     background: var(--gs-plum-soft);
-    border: 1px solid rgba(63,42,69,.08);
+    border: 1px solid rgba(122,75,99,.1);
   }
   .gs-duration .gs-duration-label {
-    color: var(--gs-muted);
+    color: var(--gs-teal-dark);
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 4px;
   }
-  .gs-duration.is-daily .gs-duration-label {
-    color: var(--gs-plum);
-  }
+  .gs-duration.is-daily .gs-duration-label { color: var(--gs-plum); }
   .gs-duration .gs-duration-value {
-    font-weight: 700;
-    color: var(--gs-ink);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 11px;
+    font-weight: 800;
+    color: var(--gs-teal-dark);
+    font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 13px;
   }
   .gs-duration.is-daily .gs-duration-value {
     color: var(--gs-plum);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: inherit;
     text-transform: uppercase;
     letter-spacing: .04em;
-    font-size: 10.5px;
+    font-size: 12px;
   }
 
   /* ----- Replacement notice --------------------------------- */
   .gs-replacement {
-    margin: 9px 14px 0;
-    padding: 7px 10px;
-    background: var(--gs-info-soft);
-    color: var(--gs-info);
+    margin: 10px 16px 0;
+    padding: 8px 10px;
+    background: var(--gs-teal-soft);
+    color: var(--gs-teal-dark);
     border-radius: 8px;
-    font-size: 10.5px;
+    font-size: 12px;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -366,69 +329,65 @@
 
   /* ----- Actions row ---------------------------------------- */
   .gs-actions {
-    padding: 12px 14px 14px;
+    padding: 14px 16px 16px;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-top: 4px;
   }
 
   .gs-actions .btn {
-    border: none;
+    border: 1px solid var(--gs-line);
+    background: #fff;
     font-family: inherit;
     font-weight: 700;
-    font-size: 12px;
-    border-radius: 9px;
-    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    padding: 9px 12px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
-    transition: transform .12s ease, box-shadow .15s ease, background .15s ease;
-    letter-spacing: -.005em;
+    transition: filter .15s ease, transform .12s ease, background .15s ease;
     line-height: 1.2;
+    color: var(--gs-ink-2);
     flex: 1 1 auto;
   }
+  .gs-actions .btn:hover  { filter: brightness(.97); }
   .gs-actions .btn:active { transform: translateY(1px); }
 
   .gs-actions .gs-btn-primary {
-    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    background: var(--gs-success);
+    border-color: var(--gs-success);
     color: white;
-    box-shadow: 0 1px 0 rgba(255,255,255,.15) inset,
-                0 3px 8px -2px rgba(16,185,129,.45);
   }
-  .gs-actions .gs-btn-primary:hover {
-    color: white;
-    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset,
-                0 5px 12px -2px rgba(16,185,129,.55);
-  }
+  .gs-actions .gs-btn-primary:hover { background: #218838; color: white; }
 
   .gs-actions .gs-btn-secondary {
     border: 1px solid var(--gs-line);
     background: white;
     color: var(--gs-ink-2);
-    font-size: 11.5px;
   }
-  .gs-actions .gs-btn-secondary.danger { color: var(--gs-danger); }
-  .gs-actions .gs-btn-secondary.danger:hover {
-    background: var(--gs-danger-soft);
-    border-color: #f8c5d2;
+  .gs-actions .gs-btn-secondary.danger {
+    color: var(--gs-danger);
+    border-color: var(--gs-danger-soft);
   }
-  .gs-actions .gs-btn-secondary.info { color: var(--gs-info); }
+  .gs-actions .gs-btn-secondary.danger:hover { background: var(--gs-danger-soft); }
+  .gs-actions .gs-btn-secondary.info { color: var(--gs-teal-dark); }
   .gs-actions .gs-btn-secondary.info:hover {
-    background: var(--gs-info-soft);
-    border-color: #d4d1fb;
+    background: var(--gs-teal-soft);
+    border-color: #b8e6e1;
   }
-  .gs-actions .gs-btn-secondary.warning { color: #b45309; }
+  .gs-actions .gs-btn-secondary.warning { color: var(--gs-amber); }
   .gs-actions .gs-btn-secondary.warning:hover {
-    background: #fef3c7;
-    border-color: #fde68a;
+    background: var(--gs-amber-soft);
+    border-color: #fce4bd;
   }
-  .gs-actions .gs-btn-secondary.primary { color: var(--gs-info); }
+  .gs-actions .gs-btn-secondary.primary { color: var(--gs-teal-dark); }
   .gs-actions .gs-btn-secondary.primary:hover {
-    background: var(--gs-info-soft);
-    border-color: #d4d1fb;
+    background: var(--gs-teal-soft);
+    border-color: #b8e6e1;
   }
 
   /* ----- Menu button (kebab) -------------------------------- */
@@ -447,53 +406,67 @@
   }
   .gs-menu-btn:hover { background: var(--gs-line-soft); color: var(--gs-ink); }
 
-  /* Column header stats : "34 h • 5 eff. • 1 abs. • 1 rempl." */
+  /* ----- Column header stats (col-meta) --------------------- */
   .gs-col-stats {
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 4px !important;
-    font-size: 10.5px;
+    gap: 6px !important;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--gs-ink-2);
-    border-top: 1px dashed var(--gs-line);
-    padding-top: 5px !important;
+    color: var(--gs-ink);
+    padding-top: 6px !important;
     padding-bottom: 4px !important;
-    margin-top: 4px;
-    scrollbar-width: thin;
-  }
-  .gs-col-stats::-webkit-scrollbar { height: 4px; }
-  .gs-col-stats::-webkit-scrollbar-thumb {
-    background: var(--gs-line);
-    border-radius: 2px;
+    margin-top: 2px;
   }
   .gs-col-stats .gs-col-stat {
     display: inline-flex;
     align-items: center;
-    background: var(--gs-line-soft);
-    padding: 2px 7px;
-    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--gs-line);
+    padding: 3px 10px;
+    border-radius: 8px;
     white-space: nowrap;
     flex: 0 0 auto;
   }
-  .gs-col-stats .gs-col-stat i { font-size: 10px; }
+  .gs-col-stats .gs-col-stat i { font-size: 11px; }
   .gs-col-stats .gs-col-stat.text-danger {
     background: var(--gs-danger-soft);
+    border-color: transparent;
+    color: var(--gs-danger) !important;
   }
+  .gs-col-stats .gs-col-stat.text-danger strong { color: var(--gs-danger); }
   .gs-col-stats .gs-col-stat.text-info {
-    background: var(--gs-info-soft);
-    color: var(--gs-info) !important;
+    background: var(--gs-teal-soft);
+    border-color: transparent;
+    color: var(--gs-teal-dark) !important;
   }
-  .gs-col-stats .gs-col-stat.text-info strong {
-    color: var(--gs-info);
-  }
+  .gs-col-stats .gs-col-stat.text-info strong { color: var(--gs-teal-dark); }
   .gs-col-stats strong {
     color: var(--gs-ink);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
     margin-right: 3px;
   }
 
-  /* Remove default kanban padding around our card, but keep vertical spacing */
+  /* ----- Boutons d'en-tête de colonne ----------------------- */
+  .gs-day-validate-wrap .btn-success {
+    background: var(--gs-success);
+    border-color: var(--gs-success);
+    font-weight: 700;
+  }
+  .gs-day-validate-wrap .btn-success:hover { background: #218838; }
+
+  .gs-day-add-agent-wrap .btn-outline-primary {
+    color: var(--gs-teal-dark);
+    border-color: var(--gs-teal);
+    font-weight: 700;
+  }
+  .gs-day-add-agent-wrap .btn-outline-primary:hover {
+    background: var(--gs-teal-soft);
+    color: var(--gs-teal-dark);
+    border-color: var(--gs-teal);
+  }
+
+  /* Remove default kanban padding around our card */
   .o_kanban_record {
     padding: 0 !important;
     border: none !important;
@@ -502,4 +475,154 @@
     margin-bottom: 14px !important;
   }
   .o_kanban_record:last-child { margin-bottom: 4px !important; }
+
+  /* ==========================================================
+   * Barre de filtre par semaine + résumé (au-dessus des colonnes)
+   * ========================================================== */
+  .o_planning_kanban_wrap {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .o_planning_kanban_wrap > .o_kanban_renderer {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .gs-week-zone { padding: 4px 4px 0; flex: 0 0 auto; }
+
+  .gs-week-filter {
+    background: #fff;
+    border: 1px solid var(--gs-line);
+    border-radius: var(--gs-radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .gs-wf-nav {
+    width: 36px; height: 36px;
+    border: 1px solid var(--gs-line);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--gs-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+    flex-shrink: 0;
+  }
+  .gs-wf-nav:hover { border-color: var(--gs-teal); color: var(--gs-teal); }
+
+  .gs-wf-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    flex: 1;
+    padding: 4px 2px;
+    scrollbar-width: thin;
+  }
+
+  .gs-week-pill {
+    min-width: 168px;
+    border: 1.5px solid var(--gs-line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px 14px 14px;
+    cursor: pointer;
+    transition: all .18s;
+    text-align: left;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .gs-week-pill:hover { border-color: var(--gs-teal); transform: translateY(-1px); }
+  .gs-week-pill.active {
+    border-color: var(--gs-teal);
+    background: var(--gs-teal-soft);
+    box-shadow: 0 3px 10px rgba(0,169,157,.18);
+  }
+  .gs-week-pill.current { border-color: var(--gs-teal); }
+
+  .gs-wp-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .4px;
+    color: var(--gs-teal-dark); text-transform: uppercase;
+  }
+  .gs-wp-range {
+    font-size: 13px; color: var(--gs-ink); font-weight: 600; margin: 2px 0 8px;
+  }
+  .gs-wp-stats { display: flex; gap: 6px; }
+  .gs-chip {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+  }
+  .gs-chip.ok   { background: var(--gs-success-soft); color: var(--gs-success); }
+  .gs-chip.abs  { background: var(--gs-danger-soft);  color: var(--gs-danger); }
+  .gs-chip.wait { background: var(--gs-amber-soft);   color: var(--gs-amber); }
+
+  .gs-wp-progress {
+    position: absolute; left: 12px; right: 12px; bottom: 6px;
+    height: 3px; border-radius: 3px; background: var(--gs-line); overflow: hidden;
+  }
+  .gs-wp-progress span { display: block; height: 100%; background: var(--gs-teal); }
+  .gs-week-pill.done .gs-wp-progress span { background: var(--gs-success); }
+
+  .gs-wp-current-badge {
+    position: absolute; top: -9px; right: 10px;
+    background: var(--gs-teal); color: #fff;
+    font-size: 10px; font-weight: 800; letter-spacing: .3px;
+    padding: 2px 9px; border-radius: 99px;
+    box-shadow: 0 2px 6px rgba(0,169,157,.35);
+  }
+
+  .gs-wf-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .gs-btn-today {
+    background: #fff; border: 1px solid var(--gs-line); color: var(--gs-muted);
+    border-radius: 10px; padding: 10px 16px;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .gs-btn-today:hover { border-color: var(--gs-teal); color: var(--gs-teal); }
+
+  /* ----- Résumé de la semaine active ------------------------ */
+  .gs-week-summary {
+    display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .gs-ws-card {
+    background: #fff; border: 1px solid var(--gs-line); border-radius: 12px;
+    padding: 12px 18px; display: flex; align-items: center; gap: 12px; min-width: 150px;
+  }
+  .gs-ws-num { font-size: 22px; font-weight: 800; }
+  .gs-ws-num.ok   { color: var(--gs-success); }
+  .gs-ws-num.abs  { color: var(--gs-danger); }
+  .gs-ws-num.wait { color: var(--gs-amber); }
+  .gs-ws-num.h    { color: var(--gs-teal-dark); }
+  .gs-ws-lbl { font-size: 12px; color: var(--gs-muted); line-height: 1.3; }
+
+  /* ----- Colonnes jour : largeur homogène quelle que soit la résolution --- */
+  .o_kanban_group:not(.o_column_folded) {
+    min-width: 280px;
+    max-width: 340px;
+    flex: 1 1 280px;
+  }
+
+  /* ----- Adaptation petits écrans -------------------------------- */
+  @media (max-width: 992px) {
+    .gs-week-pill { min-width: 150px; }
+    .gs-ws-card { min-width: 130px; padding: 10px 14px; flex: 1 1 auto; }
+    .gs-ws-num { font-size: 20px; }
+  }
+  @media (max-width: 768px) {
+    .gs-week-filter { padding: 10px 12px; gap: 8px; }
+    .gs-week-summary { gap: 10px; }
+    .gs-ws-card { min-width: calc(50% - 10px); }
+    .o_kanban_group:not(.o_column_folded) {
+      min-width: 240px;
+      max-width: none;
+    }
+  }
 }

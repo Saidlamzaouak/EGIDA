@@ -156,6 +156,94 @@ class PlanningSlot(models.Model):
                 ('is_absent', '=', True)]
 
     _DAY_NAMES_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+    _MONTHS_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+                  'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
+
+    @api.model
+    def get_planning_weeks(self, scope_domain=None):
+        """Retourne la liste des semaines (lun.→dim.) couvertes par
+        `scope_domain`, avec leurs statistiques — pour la barre de filtre
+        hebdomadaire du kanban.
+
+        `scope_domain` doit être le périmètre PROJET (ex. [('project_id','=',id)])
+        sans les filtres de statut : on veut le décompte complet (validés,
+        absents, en attente) de chaque semaine, indépendamment du filtre de
+        recherche actif.
+
+        Chaque semaine renvoyée :
+          - key           : date ISO du lundi (identifiant client)
+          - index         : n° séquentiel (1..N) pour le libellé « Semaine N »
+          - label         : « Semaine N »
+          - range_label   : « 05 janv. → 11 janv. »
+          - validated / absent / pending / total : décomptes
+          - hours         : heures des shifts passés (validés + en attente)
+          - is_current    : True si la semaine contient aujourd'hui
+          - domain_start / domain_end : bornes UTC pour filtrer le board
+        """
+        scope_domain = scope_domain or []
+        tz_name = self.env.user.tz or 'Africa/Casablanca'
+        tz = pytz.timezone(tz_name)
+
+        # tz forcé pour que les bornes de semaine (__range) soient calculées
+        # dans le fuseau de l'utilisateur.
+        groups = self.with_context(tz=tz_name).read_group(
+            scope_domain,
+            ['duration_hours:sum'],
+            ['start_datetime:week', 'gs_status'],
+            lazy=False,
+        )
+        weeks = {}
+        for g in groups:
+            rng = (g.get('__range') or {}).get('start_datetime:week')
+            if not rng:
+                continue
+            key = rng['from']
+            w = weeks.get(key)
+            if not w:
+                w = weeks[key] = {
+                    'from': rng['from'], 'to': rng['to'],
+                    'validated': 0, 'absent': 0, 'pending': 0,
+                    'total': 0, 'hours': 0.0,
+                }
+            status = g.get('gs_status')
+            cnt = g.get('__count', 0) or 0
+            hours = g.get('duration_hours', 0.0) or 0.0
+            w['total'] += cnt
+            if status == 'absent':
+                w['absent'] += cnt
+            elif status == 'validated':
+                w['validated'] += cnt
+                w['hours'] += hours
+            elif status in ('pending', 'overdue'):
+                w['pending'] += cnt
+                w['hours'] += hours
+            # 'upcoming' : compté dans total uniquement
+
+        today_local = datetime.now(tz).date()
+        result = []
+        for i, key in enumerate(sorted(weeks.keys()), start=1):
+            w = weeks[key]
+            from_utc = fields.Datetime.from_string(w['from'])
+            monday = pytz.UTC.localize(from_utc).astimezone(tz).date()
+            sunday = monday + timedelta(days=6)
+            result.append({
+                'key': monday.isoformat(),
+                'index': i,
+                'label': _("Semaine %s", i),
+                'range_label': "%02d %s → %02d %s" % (
+                    monday.day, self._MONTHS_FR[monday.month - 1],
+                    sunday.day, self._MONTHS_FR[sunday.month - 1],
+                ),
+                'validated': w['validated'],
+                'absent': w['absent'],
+                'pending': w['pending'],
+                'total': w['total'],
+                'hours': round(w['hours'], 2),
+                'is_current': monday <= today_local <= sunday,
+                'domain_start': w['from'],
+                'domain_end': w['to'],
+            })
+        return result
 
     @api.depends('start_datetime', 'end_datetime')
     def _compute_display_horaire(self):
@@ -273,18 +361,29 @@ class PlanningSlot(models.Model):
             else:
                 slot.gs_status = 'upcoming'
 
-    @api.constrains('employee_id', 'project_id', 'start_datetime', 'end_datetime')
+    @api.constrains('employee_id', 'project_id', 'start_datetime', 'end_datetime', 'is_absent')
     def _check_project_employee_exclusivity(self):
-        """Aucun chevauchement horaire entre 2 projets pour le même employé."""
+        """Aucun chevauchement horaire entre 2 projets pour le même employé.
+
+        Les slots marqués absents sont neutres : un agent absent n'est PAS
+        physiquement présent, il n'occupe donc aucun créneau.
+        - Un slot absent ne déclenche jamais le contrôle (rien à réserver).
+        - Un slot absent sur un AUTRE projet n'est pas un conflit : l'agent est
+          libre, il peut y remplacer quelqu'un au même horaire.
+        Cohérent avec toutes les agrégations du module qui filtrent is_absent."""
         for slot in self:
             if not (slot.employee_id and slot.project_id
                     and slot.start_datetime and slot.end_datetime):
+                continue
+            if slot.is_absent:
+                # Ce slot est une absence : aucune présence à protéger.
                 continue
             conflict = self.search([
                 ('id', '!=', slot.id),
                 ('employee_id', '=', slot.employee_id.id),
                 ('project_id', '!=', False),
                 ('project_id', '!=', slot.project_id.id),
+                ('is_absent', '=', False),
                 ('start_datetime', '<', slot.end_datetime),
                 ('end_datetime', '>', slot.start_datetime),
             ], limit=1)
@@ -581,27 +680,16 @@ class PlanningSlot(models.Model):
         except ValueError:
             raise UserError(_("Valeur de jour invalide : %s", day_value))
 
-        tz_name = self.env.user.tz or 'Africa/Casablanca'
-        tz = pytz.timezone(tz_name)
-        default_start = (
-            tz.localize(datetime.combine(day, datetime_time(8, 0)))
-            .astimezone(pytz.UTC).replace(tzinfo=None)
-        )
-        default_end = (
-            tz.localize(datetime.combine(day, datetime_time(17, 0)))
-            .astimezone(pytz.UTC).replace(tzinfo=None)
-        )
         return {
             'type': 'ir.actions.act_window',
             'name': _('Ajouter un agent — %s', day.strftime('%d/%m/%Y')),
             'res_model': 'gs.planning.add.agent.wizard',
             'view_mode': 'form',
+            'views': [(False, 'form')],
             'target': 'new',
             'context': {
                 'default_project_id': project_id,
                 'default_day': fields.Date.to_string(day),
-                'default_start_datetime': fields.Datetime.to_string(default_start),
-                'default_end_datetime': fields.Datetime.to_string(default_end),
             },
         }
 

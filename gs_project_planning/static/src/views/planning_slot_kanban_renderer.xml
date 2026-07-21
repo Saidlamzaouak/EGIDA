@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- On enveloppe le rendu kanban standard pour insérer la barre de filtre
+         par semaine AU-DESSUS de la rangée de colonnes. Le corps du kanban est
+         délégué au template de base via t-call. -->
+    <t t-name="gs_project_planning.PlanningSlotKanbanRenderer">
+        <div class="o_planning_kanban_wrap">
+            <PlanningWeekFilter list="props.list"/>
+            <t t-call="web.KanbanRenderer"/>
+        </div>
+    </t>
+
+</templates>

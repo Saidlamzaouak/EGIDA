@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, time as datetime_time, timedelta
+
+import pytz
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -28,11 +32,15 @@ class GsPlanningAddAgentWizard(models.TransientModel):
     role_id = fields.Many2one(
         'planning.role', string="Rôle",
     )
-    start_datetime = fields.Datetime(
-        string="Début", required=True,
+    start_hour = fields.Float(
+        string="Heure de début", default=8.0, required=True,
+        help="Heure de début (format HH:MM). La date reste celle de la colonne.",
     )
-    end_datetime = fields.Datetime(
-        string="Fin", required=True,
+    end_hour = fields.Float(
+        string="Heure de fin", default=17.0, required=True,
+        help="Heure de fin (format HH:MM). Si elle est ≤ à l'heure de début, "
+             "le créneau est considéré comme un shift de nuit se terminant le "
+             "lendemain.",
     )
     break_duration = fields.Float(
         string="Pause (h)", default=0.0,
@@ -50,14 +58,47 @@ class GsPlanningAddAgentWizard(models.TransientModel):
                 and wiz.employee_id in wiz.project_id.allowed_employee_ids
             )
 
-    @api.constrains('start_datetime', 'end_datetime')
-    def _check_dates(self):
+    @api.constrains('start_hour', 'end_hour')
+    def _check_hours(self):
         for wiz in self:
-            if (wiz.start_datetime and wiz.end_datetime
-                    and wiz.end_datetime <= wiz.start_datetime):
+            for val, label in ((wiz.start_hour, _("de début")),
+                               (wiz.end_hour, _("de fin"))):
+                if val < 0 or val >= 24:
+                    raise ValidationError(_(
+                        "L'heure %s doit être comprise entre 00:00 et 23:59.",
+                        label,
+                    ))
+            if wiz.start_hour == wiz.end_hour:
                 raise ValidationError(_(
-                    "L'heure de fin doit être postérieure à l'heure de début."
+                    "L'heure de fin doit être différente de l'heure de début."
                 ))
+
+    def _hours_to_datetimes(self):
+        """Construit les datetimes UTC (naïfs) début/fin depuis la journée fixe
+        et les heures saisies. Si l'heure de fin est ≤ à celle de début, la fin
+        bascule au lendemain (shift de nuit)."""
+        self.ensure_one()
+        if not self.day:
+            raise UserError(_("La journée n'est pas définie."))
+        tz_name = self.env.user.tz or 'Africa/Casablanca'
+        tz = pytz.timezone(tz_name)
+
+        def _split(h):
+            hh = int(h)
+            mm = int(round((h - hh) * 60))
+            if mm == 60:  # arrondi 59.9967 -> 60
+                hh, mm = hh + 1, 0
+            return hh, mm
+
+        sh, sm = _split(self.start_hour)
+        eh, em = _split(self.end_hour)
+        start_local = tz.localize(datetime.combine(self.day, datetime_time(sh, sm)))
+        end_day = self.day + timedelta(days=1) if self.end_hour <= self.start_hour else self.day
+        end_local = tz.localize(datetime.combine(end_day, datetime_time(eh, em)))
+        return (
+            start_local.astimezone(pytz.UTC).replace(tzinfo=None),
+            end_local.astimezone(pytz.UTC).replace(tzinfo=None),
+        )
 
     def action_confirm(self):
         self.ensure_one()
@@ -66,7 +107,12 @@ class GsPlanningAddAgentWizard(models.TransientModel):
         if not self.employee_id:
             raise UserError(_("Sélectionnez l'agent à ajouter."))
 
-        Slot = self.env['planning.slot']
+        start_dt, end_dt = self._hours_to_datetimes()
+        # sudo() : permet à tout utilisateur autorisé à ouvrir le wizard (chef
+        # de projet / chef d'équipe) de créer le créneau, même sans droit de
+        # création direct sur planning.slot. Les contraintes métier
+        # (@api.constrains : superposition, plafond, équipe) restent appliquées.
+        Slot = self.env['planning.slot'].sudo()
         # is_extra_agent=True : bypass de la contrainte d'appartenance à
         # l'équipe et exclusion du plafond horaire quotidien. La contrainte de
         # non-superposition inter-projets reste appliquée pour éviter les
@@ -76,8 +122,8 @@ class GsPlanningAddAgentWizard(models.TransientModel):
             'employee_id': self.employee_id.id,
             'resource_id': self.employee_id.resource_id.id or False,
             'role_id': self.role_id.id or False,
-            'start_datetime': self.start_datetime,
-            'end_datetime': self.end_datetime,
+            'start_datetime': start_dt,
+            'end_datetime': end_dt,
             'break_duration': self.break_duration or 0.0,
             'is_daily_paid': self.is_daily_paid,
             'company_id': self.project_id.company_id.id or self.env.company.id,

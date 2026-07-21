@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="gs_project_planning.PlanningWeekFilter">
+        <div t-if="!state.loading and state.weeks.length" class="gs-week-zone">
+
+            <!-- ===== Barre de filtre par semaine ===== -->
+            <div class="gs-week-filter">
+                <button class="gs-wf-nav" t-on-click="() => this.scrollWeeks(-1)">‹</button>
+
+                <div class="gs-wf-scroll" t-ref="scroll">
+                    <t t-foreach="state.weeks" t-as="w" t-key="w.key">
+                        <button class="gs-week-pill"
+                                t-att-class="{
+                                    'active': w.key === state.activeKey,
+                                    'current': w.is_current,
+                                    'done': isDone(w),
+                                }"
+                                t-on-click="() => this.onWeekClick(w)">
+                            <span t-if="w.is_current" class="gs-wp-current-badge">● En cours</span>
+                            <div class="gs-wp-label" t-esc="w.label"/>
+                            <div class="gs-wp-range" t-esc="w.range_label"/>
+                            <div class="gs-wp-stats">
+                                <span class="gs-chip ok">✓ <t t-esc="w.validated"/></span>
+                                <span class="gs-chip abs">⊘ <t t-esc="w.absent"/></span>
+                                <span class="gs-chip wait">⏳ <t t-esc="w.pending"/></span>
+                            </div>
+                            <div class="gs-wp-progress">
+                                <span t-attf-style="width:{{ progressPct(w) }}%"/>
+                            </div>
+                        </button>
+                    </t>
+                </div>
+
+                <div class="gs-wf-actions">
+                    <button class="gs-btn-today" t-on-click="() => this.goToday()">
+                        <i class="fa fa-calendar me-1"/>Aujourd'hui
+                    </button>
+                </div>
+                <button class="gs-wf-nav" t-on-click="() => this.scrollWeeks(1)">›</button>
+            </div>
+
+            <!-- ===== Résumé de la semaine sélectionnée ===== -->
+            <div t-if="activeWeek" class="gs-week-summary">
+                <div class="gs-ws-card">
+                    <div class="gs-ws-num h" t-esc="hoursLabel(summary.hours)"/>
+                    <div class="gs-ws-lbl">Heures<br/>travaillées</div>
+                </div>
+                <div class="gs-ws-card">
+                    <div class="gs-ws-num ok" t-esc="summary.validated"/>
+                    <div class="gs-ws-lbl">Créneaux<br/>validés</div>
+                </div>
+                <div class="gs-ws-card">
+                    <div class="gs-ws-num wait" t-esc="summary.pending"/>
+                    <div class="gs-ws-lbl">En attente<br/>de validation</div>
+                </div>
+                <div class="gs-ws-card">
+                    <div class="gs-ws-num abs" t-esc="summary.absent"/>
+                    <div class="gs-ws-lbl">Absences<br/>déclarées</div>
+                </div>
+            </div>
+
+        </div>
+    </t>
+
+</templates>

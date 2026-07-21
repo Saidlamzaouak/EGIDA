@@ -31,8 +31,8 @@
                     </group>
                     <group string="Horaires">
                         <group>
-                            <field name="start_datetime"/>
-                            <field name="end_datetime"/>
+                            <field name="start_hour" widget="float_time"/>
+                            <field name="end_hour" widget="float_time"/>
                         </group>
                         <group>
                             <field name="break_duration" widget="float_time"/>

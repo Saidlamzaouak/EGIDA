@@ -165,7 +165,9 @@ class GsPlanningOvertimeWizard(models.TransientModel):
             ))
 
         new_end = slot.end_datetime + timedelta(hours=self.hours_to_add)
-        slot.write({'end_datetime': new_end})
+        # sudo() : cohérent avec l'ouverture de l'action aux chefs ; les
+        # contraintes métier (@api.constrains) restent appliquées.
+        slot.sudo().write({'end_datetime': new_end})
 
         return {
             'type': 'ir.actions.client',

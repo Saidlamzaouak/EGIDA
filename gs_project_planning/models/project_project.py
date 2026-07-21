@@ -298,6 +298,50 @@ class ProjectProject(models.Model):
             },
         }
 
+    def action_apply_employee_rest_weekday(self):
+        """Recopie les « Jours de repos » de la fiche employé vers chaque ligne
+        Planning Resources du/des projet(s) sélectionné(s).
+
+        Ne pousse que les valeurs réellement définies sur l'employé : si un
+        employé n'a aucun jour de repos, les éventuels jours saisis
+        manuellement sur la ligne (override projet) sont conservés.
+        """
+        updated = 0
+        projects_touched = 0
+        for project in self:
+            project_updated = 0
+            for line in project.planning_line_ids:
+                emp_rest = line.employee_id.sudo().rest_weekday_ids
+                if emp_rest and line.rest_weekday_ids != emp_rest:
+                    line.rest_weekday_ids = [(6, 0, emp_rest.ids)]
+                    project_updated += 1
+            if project_updated:
+                projects_touched += 1
+                updated += project_updated
+
+        if not updated:
+            raise UserError(_(
+                "Aucune ligne mise à jour : les jours de repos des lignes "
+                "correspondent déjà à ceux des fiches employés, ou aucun jour "
+                "de repos n'est renseigné sur les employés concernés."
+            ))
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Jours de repos synchronisés'),
+                'message': _(
+                    "%(n)d ligne(s) mise(s) à jour sur %(p)d projet(s) depuis "
+                    "les fiches employés. Cliquez sur « Actualiser le "
+                    "planning » pour propager aux créneaux futurs.",
+                    n=updated, p=projects_touched,
+                ),
+                'type': 'success',
+                'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
+            },
+        }
+
     def action_apply_line_hours_to_slots(self):
         """Applique la config horaire actuelle des lignes « Planning Resources »
         aux créneaux FUTURS déjà générés.
@@ -510,6 +554,8 @@ class ProjectProject(models.Model):
         current = self.date_start
         while current <= self.date:
             for line in self.planning_line_ids:
+                if self._is_line_rest_day(line, current):
+                    continue
                 if not self._is_employee_working_day(line.employee_id, current, local_tz):
                     continue
                 slots_vals.append(self._prepare_slot_vals(line, current, local_tz))
@@ -617,6 +663,8 @@ class ProjectProject(models.Model):
                 key = (line.employee_id.id, current_day)
                 if key in existing_keys:
                     continue
+                if self._is_line_rest_day(line, current_day):
+                    continue
                 if not self._is_employee_working_day(
                     line.employee_id, current_day, local_tz
                 ):
@@ -667,6 +715,17 @@ class ProjectProject(models.Model):
                 "Le planning a déjà été généré pour ce projet. "
                 "Utilisez « Réinitialiser le planning » pour le régénérer."
             ))
+
+    def _is_line_rest_day(self, line, day):
+        """True si `day` tombe un jour de repos de l'employé pour cette ligne.
+
+        Priorité : jours de repos définis sur la ligne (override projet), sinon
+        ceux de la fiche employé. `day.weekday()` : lundi=0 … dimanche=6, ce
+        qui correspond au champ `dayofweek` de gs.rest.weekday."""
+        # sudo : rest_weekday_ids n'est pas un champ public de l'employé ; la
+        # génération peut être lancée par un chef de projet sans droits RH.
+        rest_days = line.rest_weekday_ids or line.employee_id.sudo().rest_weekday_ids
+        return day.weekday() in rest_days.mapped('dayofweek')
 
     def _is_employee_working_day(self, employee, day, local_tz):
         calendar = employee.resource_calendar_id or self.company_id.resource_calendar_id

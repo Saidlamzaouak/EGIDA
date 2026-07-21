@@ -7,10 +7,13 @@
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='work_email']" position="after">
-                <field name="cin" required="1"
+                <field name="cin" required="0"
                        placeholder="ex. G913831"/>
-                <field name="cnss" required="1"
+                <field name="cnss" required="0"
                        placeholder="ex. 123456789"/>
+                <field name="rest_weekday_ids" widget="many2many_tags"
+                       options="{'no_create': True}"
+                       placeholder="ex. Samedi, Dimanche"/>
             </xpath>
         </field>
     </record>

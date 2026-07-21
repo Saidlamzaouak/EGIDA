@@ -20,6 +20,26 @@ export class PlanningSlotKanbanHeader extends KanbanHeader {
         return this.props.group || this.props.list;
     }
 
+    // Jours en français indexés sur DateTime.weekday de Luxon (1=Lundi … 7=Dimanche)
+    static WEEKDAYS_FR = [
+        "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
+    ];
+
+    get groupName() {
+        const base = super.groupName;
+        // Préfixe le nom du jour : « Lundi 13 juil. 2026 ».
+        if (this.isGroupedByDate && typeof base === "string") {
+            const v = this.group && this.group.value;
+            if (v && typeof v.weekday === "number") {
+                const day = this.constructor.WEEKDAYS_FR[v.weekday - 1];
+                if (day) {
+                    return `${day} ${base}`;
+                }
+            }
+        }
+        return base;
+    }
+
     get isGroupedByDate() {
         const grp = this.group;
         const gbf = grp && (grp.groupByField || grp._config?.groupBy);

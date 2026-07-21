@@ -2,8 +2,13 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_gs_project_planning_line_user,gs.project.planning.line user,model_gs_project_planning_line,project.group_project_user,1,0,0,0
 access_gs_project_planning_line_manager,gs.project.planning.line manager,model_gs_project_planning_line,project.group_project_manager,1,1,1,1
 access_gs_planning_replace_wizard_manager,gs.planning.replace.wizard manager,model_gs_planning_replace_wizard,project.group_project_manager,1,1,1,1
+access_gs_planning_replace_wizard_user,gs.planning.replace.wizard user,model_gs_planning_replace_wizard,base.group_user,1,1,1,1
 access_gs_planning_overtime_wizard_manager,gs.planning.overtime.wizard manager,model_gs_planning_overtime_wizard,project.group_project_manager,1,1,1,1
+access_gs_planning_overtime_wizard_user,gs.planning.overtime.wizard user,model_gs_planning_overtime_wizard,base.group_user,1,1,1,1
 access_gs_planning_add_agent_wizard_manager,gs.planning.add.agent.wizard manager,model_gs_planning_add_agent_wizard,project.group_project_manager,1,1,1,1
+access_gs_planning_add_agent_wizard_user,gs.planning.add.agent.wizard user,model_gs_planning_add_agent_wizard,base.group_user,1,1,1,1
+access_gs_rest_weekday_user,gs.rest.weekday user,model_gs_rest_weekday,base.group_user,1,0,0,0
+access_gs_rest_weekday_manager,gs.rest.weekday manager,model_gs_rest_weekday,project.group_project_manager,1,1,1,1
 access_gs_planning_shift_user,gs.planning.shift user,model_gs_planning_shift,project.group_project_user,1,0,0,0
 access_gs_planning_shift_manager,gs.planning.shift manager,model_gs_planning_shift,project.group_project_manager,1,1,1,1
 access_gs_planning_actual_user,gs.planning.actual user,model_gs_planning_actual,project.group_project_user,1,0,0,0

@@ -59,7 +59,10 @@ class GsPlanningReplaceWizard(models.TransientModel):
                 ),
             ))
 
-        Slot = self.env['planning.slot']
+        # sudo() : permet aux chefs (sans droit de création direct sur
+        # planning.slot) de créer le créneau de remplacement. Les contraintes
+        # métier (@api.constrains) restent appliquées.
+        Slot = self.env['planning.slot'].sudo()
         new_slot = Slot.create({
             'project_id': self.project_id.id,
             'employee_id': self.replacement_employee_id.id,

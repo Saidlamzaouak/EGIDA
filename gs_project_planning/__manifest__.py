@@ -15,7 +15,7 @@ GS Project Planning
     'author': "AH",
     'website': "https://www.metraco.ma",
     'category': 'Services/Project',
-    'version': '18.0.2.33.0',
+    'version': '18.0.2.46.0',
     'depends': [
         'project',
         'project_forecast',
@@ -27,6 +27,7 @@ GS Project Planning
     'data': [
         'security/gs_security_groups.xml',
         'security/ir.model.access.csv',
+        'data/gs_rest_weekday_data.xml',
         'data/planning_role_data.xml',
         'data/project_stage_data.xml',
         'data/gs_planning_shift_data.xml',
