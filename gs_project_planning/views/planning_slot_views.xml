@@ -397,4 +397,31 @@ action = records.action_open_replace_wizard()
         </field>
     </record>
 
+    <!-- =========================================================
+         Formulaire créneau : changement de shift ponctuel
+         (jour exceptionnel) — recalcule les horaires du créneau
+         ========================================================= -->
+    <record id="planning_view_form_gs_shift" model="ir.ui.view">
+        <field name="name">planning.slot.form.gs.shift</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='slot_info_right']/label[@for='start_datetime']" position="before">
+                <label for="shift_id"/>
+                <div class="o_row">
+                    <field name="shift_id" options="{'no_create': True}"
+                           readonly="is_validated or is_absent"/>
+                    <span class="badge text-bg-warning" invisible="not is_shift_override">
+                        Exceptionnel
+                    </span>
+                </div>
+                <field name="is_shift_override" invisible="1"/>
+                <field name="is_validated" invisible="1"/>
+                <field name="is_absent" invisible="1"/>
+                <field name="break_duration" invisible="1"/>
+                <field name="is_daily_paid" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

@@ -112,9 +112,8 @@
     color: var(--gs-ink);
     line-height: 1.25;
     letter-spacing: -.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .gs-matricule {

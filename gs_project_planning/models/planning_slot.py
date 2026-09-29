@@ -56,6 +56,18 @@ class PlanningSlot(models.Model):
         help="Propagé depuis le shift à la génération. "
              "Affiche « /jour » au lieu des heures dans le kanban.",
     )
+    shift_id = fields.Many2one(
+        'gs.planning.shift', string="Shift", copy=False, index=True,
+        help="Plage horaire du créneau. Hérité de la ligne Planning Resources "
+             "à la génération ; peut être changé ponctuellement (jour "
+             "exceptionnel) : les horaires du créneau sont alors recalculés.",
+    )
+    is_shift_override = fields.Boolean(
+        string="Shift exceptionnel", default=False, copy=False,
+        help="Coché automatiquement quand le shift a été changé manuellement "
+             "sur ce créneau. La ré-application des horaires du projet ne "
+             "modifie plus ce créneau.",
+    )
     is_night_shift = fields.Boolean(
         string="Shift de nuit", compute='_compute_is_night_shift', store=True,
         help="Vrai si le créneau passe minuit (start et end sur 2 jours).",
@@ -200,6 +212,33 @@ class PlanningSlot(models.Model):
                 slot.duration_hours = max(0.0, gross - (slot.break_duration or 0.0))
             else:
                 slot.duration_hours = 0.0
+
+    @api.onchange('shift_id')
+    def _onchange_shift_id_times(self):
+        """Changement de shift ponctuel : on garde le jour du créneau et on
+        recalcule début / fin / pause d'après le catalogue de shifts."""
+        for slot in self:
+            if not slot.shift_id or not slot.start_datetime:
+                continue
+            shift = slot.shift_id
+            local_tz = pytz.timezone(self.env.user.tz or 'Africa/Casablanca')
+            day = pytz.UTC.localize(slot.start_datetime).astimezone(local_tz).date()
+
+            start_h = int(shift.start_hour)
+            start_m = int(round((shift.start_hour - start_h) * 60))
+            end_h = int(shift.end_hour)
+            end_m = int(round((shift.end_hour - end_h) * 60))
+            local_start = local_tz.localize(
+                datetime.combine(day, datetime_time(start_h, start_m)))
+            end_day = day + timedelta(days=1) if shift.crosses_midnight else day
+            local_end = local_tz.localize(
+                datetime.combine(end_day, datetime_time(end_h, end_m)))
+
+            slot.start_datetime = local_start.astimezone(pytz.UTC).replace(tzinfo=None)
+            slot.end_datetime = local_end.astimezone(pytz.UTC).replace(tzinfo=None)
+            slot.break_duration = shift.break_duration or 0.0
+            slot.is_daily_paid = shift.is_daily_paid
+            slot.is_shift_override = True
 
     @api.depends('start_datetime', 'end_datetime')
     def _compute_is_night_shift(self):
