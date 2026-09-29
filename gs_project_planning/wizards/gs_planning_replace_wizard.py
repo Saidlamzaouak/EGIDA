@@ -70,6 +70,7 @@ class GsPlanningReplaceWizard(models.TransientModel):
             'role_id': self.role_id.id or False,
             'start_datetime': self.start_datetime,
             'end_datetime': self.end_datetime,
+            'shift_id': self.original_slot_id.shift_id.id,
             'company_id': self.original_slot_id.company_id.id or self.env.company.id,
             'state': 'draft',
             'replaces_slot_id': self.original_slot_id.id,

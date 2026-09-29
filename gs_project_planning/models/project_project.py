@@ -384,6 +384,11 @@ class ProjectProject(models.Model):
                     ('start_datetime', '>=', cutoff_utc),
                     ('is_validated', '=', False),
                     ('is_absent', '=', False),
+                    # Shift changé à la main (jour exceptionnel) : on n'y
+                    # touche pas. Un créneau d'une autre ligne (autre shift
+                    # du même agent) n'est pas concerné non plus.
+                    ('is_shift_override', '=', False),
+                    ('shift_id', 'in', [line.shift_id.id, False]),
                 ])
                 for slot in slots:
                     if not slot.start_datetime:
@@ -444,6 +449,7 @@ class ProjectProject(models.Model):
             'end_datetime': local_end.astimezone(pytz.UTC).replace(tzinfo=None),
             'break_duration': line.break_duration or 0.0,
             'is_daily_paid': line.shift_id.is_daily_paid,
+            'shift_id': line.shift_id.id,
         }
 
     def action_open_planning_slots(self):
@@ -761,4 +767,5 @@ class ProjectProject(models.Model):
             'state': 'draft',
             'break_duration': line.break_duration or 0.0,
             'is_daily_paid': line.shift_id.is_daily_paid,
+            'shift_id': line.shift_id.id,
         }
